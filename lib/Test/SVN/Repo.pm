@@ -6,7 +6,7 @@ use MooseX::Types::Path::Class;
 use namespace::autoclean;
 
 use Carp        qw( croak );
-use IPC::Run qw( run );
+use IPC::Run    qw( run );
 use File::Slurp qw( read_file );
 use Try::Tiny;
 
@@ -76,6 +76,19 @@ has '_svncmd' => (
 
 #------------------------------------------------------------------------------
 
+sub repo_path       { shift->root_path->subdir('repo')     }
+sub conf_path       { shift->repo_path->subdir('conf')     }
+sub server_pid_file { shift->conf_path->file('server.pid') }
+
+sub url {
+    my ($self) = @_;
+    return $self->has_auth
+            ? 'svn://localhost:' . $self->port
+            : 'file://' . $self->repo_path;
+}
+
+#------------------------------------------------------------------------------
+
 sub _build_root_path {
     my ($self) = @_;
     return tempdir( CLEANUP => ! $self->keep_files );
@@ -89,18 +102,6 @@ sub _build__svncmd {
         $svn .= " --username $user --password $pass";
     }
     return $svn;
-}
-
-
-sub repo_path       { shift->root_path->subdir('repo')     }
-sub conf_path       { shift->repo_path->subdir('conf')     }
-sub server_pid_file { shift->conf_path->file('server.pid') }
-
-sub url {
-    my ($self) = @_;
-    return $self->has_auth
-            ? 'svn://localhost:' . $self->port
-            : 'file://' . $self->repo_path;
 }
 
 #------------------------------------------------------------------------------
@@ -266,13 +267,14 @@ __END__
 
     # Create a repo with no password authentication
     my $repo = Test::SVN::Repo->new;
-        );
 
-    # Create a repo with password authentication
-    my $repo = Test::SVN::Repo->new(
+    # or, create a repo with password authentication
+    $repo = Test::SVN::Repo->new(
             users       => { joe => 'secret', fred => 'foobar' },
             keep_files  => 1,
         );
+
+    my $repo_url = $repo->url;
 
 =head1 DESCRIPTION
 
@@ -307,12 +309,22 @@ Defaults to true if root_path is specified, false otherwise.
 
 Verbose output.
 
-=head2 repo_path
-
-Path to the SVN repository.
-
 =head2 url
 
-URL form of repo_path
+URL form of repo_path.
+
+=head2 repo_path
+
+Local path to the SVN repository.
+
+=head2 server_pid_file
+
+Full path to the pid file created by svnserve.
+
+=head2 conf_path
+
+Full path to svnserve configuration directory.
+
+=for Pod::Coverage BUILD DEMOLISH
 
 =cut
