@@ -265,15 +265,20 @@ __END__
 =head1 SYNOPSIS
 
     # Create a repo with no password authentication
-    my $repo = Test::SVN::Repo->new(
-            deployments => [qw( development staging )]
+    my $repo = Test::SVN::Repo->new;
         );
 
     # Create a repo with password authentication
     my $repo = Test::SVN::Repo->new(
-            deployments => [qw( development staging )],
-            users => { joe => 'secret', fred => 'foobar' },
+            users       => { joe => 'secret', fred => 'foobar' },
+            keep_files  => 1,
         );
+
+=head1 DESCRIPTION
+
+Create a temporary subversion repository for testing.
+
+Password authentication is available is required.
 
 =head1 ATTRIBUTES
 
