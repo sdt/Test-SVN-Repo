@@ -155,6 +155,8 @@ sub _create_file {
 sub _spawn_server {
     my ($self) = @_;
 
+    #TODO: maybe fork and run the server in foreground mode here
+
     my $retry_count = $self->retry_count;
     my $base_port = $self->start_port;
     my $port_range = $self->end_port - $self->start_port + 1;
@@ -207,9 +209,21 @@ sub _try_spawn_server {
 
 sub _get_server_pid {
     my ($self) = @_;
-    my $pid = read_file($self->server_pid_file->stringify);
-    chomp $pid;
-    return $pid;
+    my $retry_count = 5;
+    my $pid_filename = $self->server_pid_file->stringify;
+    for (1 .. $retry_count) {
+        my $pid;
+        try {
+            $pid = read_file($pid_filename);
+            chomp $pid;
+        }
+        catch {
+            _diag('... retry');
+            sleep 1; # svnserve may not have written its file yet
+        };
+        return $pid if defined $pid;
+    }
+    croak "Can't find pid file $pid_filename";
 }
 
 sub _kill_server {
