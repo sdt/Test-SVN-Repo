@@ -50,6 +50,12 @@ has 'end_port' => (
     default     => 65535,
 );
 
+has 'retry_count' => (
+    is          => 'ro',
+    isa         => 'Int',
+    default     => 100,
+);
+
 #------------------------------------------------------------------------------
 
 has 'port' => (
@@ -97,7 +103,7 @@ sub BUILD {
 
 sub DEMOLISH {
     my ($self) = @_;
-    $self->_kill_server if $self->has_auth;
+    $self->_kill_server if defined $self->server_pid;
     $self->root_path->rmtree unless $self->keep_files;
 }
 
@@ -134,7 +140,7 @@ END
 
 sub _do_cmd {
     my ($self, $command) = @_;
-    my $output = `$command`;
+    my $output = `$command` || $?;
 
     croak "'$command' failed: $output" if $?;
     _diag($command, $output) if $self->verbose;
@@ -149,9 +155,9 @@ sub _create_file {
 sub _spawn_server {
     my ($self) = @_;
 
-    my $retry_count = 100;
-    my $base_port = 1024;
-    my $port_range = 65535 - $base_port;
+    my $retry_count = $self->retry_count;
+    my $base_port = $self->start_port;
+    my $port_range = $self->end_port - $self->start_port + 1;
     for (1 .. $retry_count) {
         my $port = _choose_random_port($base_port, $port_range);
         my $started = 0;
@@ -209,7 +215,7 @@ sub _get_server_pid {
 sub _kill_server {
     my ($self) = @_;
 
-    my $pid = $self->pid;
+    my $pid = $self->server_pid;
     _diag("Killing server process [$pid]") if $self->verbose;
     kill 15, $pid;
     waitpid($pid, 0);

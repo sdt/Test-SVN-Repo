@@ -12,6 +12,7 @@ note 'Basic sanity checks'; {
     lives_ok { $repo = Test::SVN::Repo->new } '... ctor lives';
     isa_ok($repo, 'Test::SVN::Repo', '...');
     like($repo->url, qr(^file://), '... url is file://');
+    is(system('svn', 'info', $repo->url), 0, '... is a valid repo')
 }
 
 note 'Automatic temporary directory handling with cleanup'; {
@@ -66,12 +67,6 @@ note 'Manual temporary directory handling without cleanup'; {
     ok(scalar($path->children) > 0, '... root path is still non-empty');
 
     $path->rmtree;
-}
-
-note 'Basic svn repo test'; {
-    my $repo = Test::SVN::Repo->new;
-    my $url = $repo->url;
-    is(system('svn', 'info', $url), 0, '... is a valid repo')
 }
 
 done_testing();
