@@ -8,6 +8,7 @@ use namespace::autoclean;
 use Carp        qw( croak );
 use IPC::Run    qw( run );
 use File::Slurp qw( read_file );
+use File::Temp  qw( tempdir );
 use Try::Tiny;
 
 use base 'Test::Builder::Module';
@@ -16,7 +17,7 @@ has 'root_path' => (
     is          => 'ro',
     isa         => 'Path::Class::Dir',
     coerce      => 1,
-    lazy_build  => 1,
+    default     => sub { tempdir },
 );
 
 has 'users' => (
@@ -34,7 +35,7 @@ has 'keep_files' => (
 has 'verbose' => (
     is      => 'ro',
     isa     => 'Bool',
-    default => $ENV{TEST_VERBOSE} // 0,
+    default => 0,
 );
 
 has 'start_port' => (
@@ -67,15 +68,6 @@ has 'server_pid' => (
 
 #------------------------------------------------------------------------------
 
-has '_svncmd' => (
-    is          => 'ro',
-    isa         => 'Str',
-    init_arg    => undef,
-    lazy_build  => 1,
-);
-
-#------------------------------------------------------------------------------
-
 sub repo_path       { shift->root_path->subdir('repo')     }
 sub conf_path       { shift->repo_path->subdir('conf')     }
 sub server_pid_file { shift->conf_path->file('server.pid') }
@@ -89,23 +81,6 @@ sub url {
 
 #------------------------------------------------------------------------------
 
-sub _build_root_path {
-    my ($self) = @_;
-    return tempdir( CLEANUP => ! $self->keep_files );
-}
-
-sub _build__svncmd {
-    my ($self) = @_;
-    my $svn = 'svn --no-auth-cache --non-interactive';
-    if ($self->has_auth) {
-        my ($user, $pass) = %{ $self->users }; # grab the first one
-        $svn .= " --username $user --password $pass";
-    }
-    return $svn;
-}
-
-#------------------------------------------------------------------------------
-
 sub BUILD {
     my ($self) = @_;
 
@@ -113,28 +88,17 @@ sub BUILD {
 
     $self->_do_cmd("svnadmin create $repo_dir");
     if ($self->has_auth) {
-        croak 'users hash cannot be entry'
+        croak 'users hash must contain at least one username/password pair'
             if scalar(keys %{ $self->users }) == 0;
         $self->_setup_auth;
         $self->_spawn_server;   # this will die if it fails
     }
-
-    my $svn = $self->_svncmd;
-
-    # Create the deployment directories
-    my $repo_url = $self->url;
-    for my $deployment ($self->deployments) {
-        $self->_do_svn("mkdir $repo_url/$deployment -m'Creating $deployment survey repo'");
-    }
-
-    my $checkout_dir = $self->checkout_path;
-    my $checkout_output = $self->_do_svn("co $repo_url $checkout_dir");
-    croak "svn co failed: $checkout_output" unless -d $checkout_dir;
 }
 
 sub DEMOLISH {
     my ($self) = @_;
     $self->_kill_server if $self->has_auth;
+    $self->root_path->rmtree unless $self->keep_files;
 }
 
 #------------------------------------------------------------------------------
@@ -166,11 +130,6 @@ END
             "users = rw\n");
 
 #    _diag(`find $conf_path -type f -print -exec cat {} \\;`);
-}
-
-sub _do_svn {
-    my ($self, $command) = @_;
-    return $self->_do_cmd($self->_svncmd . ' ' . $command);
 }
 
 sub _do_cmd {
