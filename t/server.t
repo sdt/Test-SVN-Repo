@@ -1,16 +1,18 @@
 #!/usr/bin/env perl
 
-use Test::More tests => 17;
+use Test::More tests => 19;
 use Test::Exception;
 
+use Config;
 use IPC::Run ();
-
-use POSIX ":sys_wait_h";
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
 
+my %sig_num;
+@sig_num{split ' ', $Config{sig_name}} = split ' ', $Config{sig_num};
+
 SKIP: {
-    skip 'Subversion not installed', 16
+    skip 'Subversion not installed', 18
         unless can_run('svn');
 
     my %users = ( userA => 'passA', userB => 'passB' );
@@ -74,28 +76,13 @@ SKIP: {
     }
 
     note 'Check that svnserve gets cleaned up'; {
-        my $code = <<'END';
-my $repo = Test::SVN::Repo->new( users => { a => 'b' } );
-print $repo->server_pid, "\n";
-1 while 1;
-END
 
-        # Spawn a sub-process that starts a server.
-        my @cmd = ( qw( perl -MTest::SVN::Repo -e ), $code);
-        my ($in, $out, $err);
-        my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
+        for my $signame (qw( HUP INT QUIT TERM )) {
+            my $pid = spawn_and_signal($sig_num{$signame});
 
-        # Obtain the server pid
-        $h->pump;
-        my $pid = $out;
-        chomp $pid;
-
-        # Kill the sub-process
-        $h->signal(15);
-        $h->finish;
-
-        # Check that the server (grandchild process) has exited
-        ok(! process_exists($pid), '... svnserve process has shutdown')
+            # Check that the server (grandchild process) has exited
+            ok(! process_exists($pid), '... svnserve process has shutdown after receiving signal ' . $signame)
+        }
     }
 
     note 'Verbose mode'; {
@@ -122,4 +109,30 @@ sub create_file {
 sub process_exists {
     my ($pid) = @_;
     return kill(0, 0+$pid);
+}
+
+sub spawn_and_signal {
+    my ($signal) = @_;
+
+    my $code = <<'END';
+my $repo = Test::SVN::Repo->new( users => { a => 'b' } );
+print $repo->server_pid, "\n";
+1 while 1;
+END
+
+    # Spawn a sub-process that starts a server.
+    my @cmd = ( qw( perl -MTest::SVN::Repo -e ), $code);
+    my ($in, $out, $err);
+    my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
+
+    # Obtain the server pid
+    $h->pump;
+    my $pid = $out;
+    chomp $pid;
+
+    # Kill the sub-process
+    $h->signal($signal);
+    $h->finish;
+
+    return $pid;
 }
