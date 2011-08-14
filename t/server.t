@@ -1,14 +1,16 @@
 #!/usr/bin/env perl
 
-use Test::More tests => 16;
+use Test::More tests => 17;
 use Test::Exception;
+
+use IPC::Run ();
 
 use POSIX ":sys_wait_h";
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
 
 SKIP: {
-    skip 'Subversion not installed', 15
+    skip 'Subversion not installed', 16
         unless can_run('svn');
 
     my %users = ( userA => 'passA', userB => 'passB' );
@@ -23,7 +25,7 @@ SKIP: {
 
         my $pid = $repo->server_pid;
         undef $repo;
-        is(waitpid($pid, WNOHANG), -1, '... server has shutdown')
+        ok(! process_exists($pid), '... server has shutdown')
     }
 
     note 'Check authentication'; {
@@ -71,15 +73,34 @@ SKIP: {
             '... server gives up if no ports available';
     }
 
+    note 'Check that svnserve gets cleaned up'; {
+        my $code = <<'END';
+my $repo = Test::SVN::Repo->new( users => { a => 'b' } );
+print $repo->server_pid, "\n";
+1 while 1;
+END
+
+        # Spawn a sub-process that starts a server.
+        my @cmd = ( qw( perl -MTest::SVN::Repo -e ), $code);
+        my ($in, $out, $err);
+        my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
+
+        # Obtain the server pid
+        $h->pump;
+        my $pid = $out;
+        chomp $pid;
+
+        # Kill the sub-process
+        $h->signal(15);
+        $h->finish;
+
+        # Check that the server (grandchild process) has exited
+        ok(! process_exists($pid), '... svnserve process has shutdown')
+    }
+
     note 'Verbose mode'; {
         lives_ok { Test::SVN::Repo->new( users => \%users, verbose => 1 ) }
             '... ctor lives';
-    }
-
-    note 'SVN binaries not available'; {
-        local $ENV{PATH} = '';
-        dies_ok { Test::SVN::Repo->new( users => \%users ) }
-            '... ctor dies if svnadmin cannot be found';
     }
 
 }; # end SKIP
@@ -96,4 +117,9 @@ sub create_file {
     $path->dir->mkpath;
     print {$path->openw} @_;
     return $path;
+}
+
+sub process_exists {
+    my ($pid) = @_;
+    return kill(0, 0+$pid);
 }
