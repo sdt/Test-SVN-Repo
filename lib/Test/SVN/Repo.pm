@@ -5,7 +5,7 @@ use Carp        qw( croak );
 use IPC::Run    qw( run );
 use File::Temp  qw( tempdir );
 use Path::Class ();
-use Try::Tiny;
+use Try::Tiny   qw( catch try );
 
 use base qw( Class::Accessor Test::Builder::Module );
 
