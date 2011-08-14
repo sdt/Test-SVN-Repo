@@ -7,7 +7,6 @@ use namespace::autoclean;
 
 use Carp        qw( croak );
 use IPC::Run    qw( run );
-use File::Slurp qw( read_file );
 use File::Temp  qw( tempdir );
 use Try::Tiny;
 
@@ -210,11 +209,11 @@ sub _try_spawn_server {
 sub _get_server_pid {
     my ($self) = @_;
     my $retry_count = 5;
-    my $pid_filename = $self->server_pid_file->stringify;
+    my $pid_filename = $self->server_pid_file;
     for (1 .. $retry_count) {
         my $pid;
         try {
-            $pid = read_file($pid_filename);
+            $pid = _read_file($pid_filename);
             chomp $pid;
         }
         catch {
@@ -233,6 +232,11 @@ sub _kill_server {
     _diag("Killing server process [$pid]") if $self->verbose;
     kill 15, $pid;
     waitpid($pid, 0);
+}
+
+sub _read_file {
+    my $fh = $_[0]->openr;
+    local $/ = <$fh>;
 }
 
 __PACKAGE__->meta->make_immutable;
