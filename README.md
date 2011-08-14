@@ -23,7 +23,8 @@ version 0.001
 
 Create a temporary subversion repository for testing.
 
-Password authentication is available is required.
+If no authentication is required, a simple on-disk repo is created.
+An svnserve instance is created when authentication is required.
 
 # ATTRIBUTES
 
