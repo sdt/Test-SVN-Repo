@@ -69,4 +69,9 @@ note 'Manual temporary directory handling without cleanup'; {
     $path->rmtree;
 }
 
+note 'Verbose mode'; {
+    lives_ok { Test::SVN::Repo->new( verbose => 1 ) }
+        '... ctor lives';
+}
+
 done_testing();

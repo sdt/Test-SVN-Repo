@@ -66,6 +66,11 @@ note 'Port range tests'; {
         '... server gives up if no ports available';
 }
 
+note 'Verbose mode'; {
+    lives_ok { Test::SVN::Repo->new( users => \%users, verbose => 1 ) }
+        '... ctor lives';
+}
+
 note 'SVN binaries not available'; {
     local $ENV{PATH} = '';
     dies_ok { Test::SVN::Repo->new( users => \%users ) }
