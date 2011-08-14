@@ -135,7 +135,7 @@ sub _spawn_server {
             $self->{port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
-                  'started on port ', $self->port) if $self->verbose;
+                  ' started on port ', $self->port) if $self->verbose;
             $started = 1;
         }
         catch {
