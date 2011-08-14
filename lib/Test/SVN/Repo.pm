@@ -2,7 +2,7 @@ package Test::SVN::Repo;
 # ABSTRACT: Authenticated subversion repositories for testing
 
 use Carp        qw( croak );
-use IPC::Run    qw( run );
+use IPC::Run    qw( start );
 use File::Temp  qw( tempdir );
 use Path::Class ();
 use Try::Tiny   qw( catch try );
@@ -70,7 +70,7 @@ sub _init {
 
 sub DESTROY {
     my ($self) = @_;
-    $self->_kill_server if defined $self->server_pid;
+    _kill_server($self->{server}) if defined $self->{server};
     $self->root_path->rmtree unless $self->keep_files;
 }
 
@@ -122,8 +122,6 @@ sub _create_file {
 sub _spawn_server {
     my ($self) = @_;
 
-    #TODO: maybe fork and run the server in foreground mode here
-
     my $retry_count = $self->retry_count;
     my $base_port = $self->start_port;
     my $port_range = $self->end_port - $self->start_port + 1;
@@ -131,7 +129,7 @@ sub _spawn_server {
         my $port = _choose_random_port($base_port, $port_range);
         my $started = 0;
         try {
-            $self->_try_spawn_server($port);
+            $self->{server} = $self->_try_spawn_server($port);
             $self->{port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
@@ -163,6 +161,7 @@ sub _try_spawn_server {
     my ($self, $port) = @_;
     my @cmd = ( 'svnserve',
                 '-d',           # daemon mode
+                '--foreground', # don't actually daemonize
                 '-r'            => $self->repo_path->stringify,
                 '--pid-file'    => $self->server_pid_file->stringify,
                 '--listen-host' => 'localhost',
@@ -170,8 +169,14 @@ sub _try_spawn_server {
               );
 
     my ($in, $out, $err);
-    run(\@cmd, \$in, \$out, \$err)
-        or die "$err";
+    my $h = start(\@cmd, \$in, \$out, \$err);
+
+    while ($h->pumpable) {
+        return $h if -e $self->server_pid_file;
+        $h->pump_nb;
+    }
+    $h->finish;
+    die $err if $err;
 }
 
 sub _get_server_pid {
@@ -194,12 +199,8 @@ sub _get_server_pid {
 }
 
 sub _kill_server {
-    my ($self) = @_;
-
-    my $pid = $self->server_pid;
-    _diag("Killing server process [$pid]") if $self->verbose;
-    kill 15, $pid;
-    waitpid($pid, 0);
+    my ($server) = @_;
+    $server->kill_kill, grace => 5;
 }
 
 sub _read_file {
