@@ -16,6 +16,18 @@ __PACKAGE__->mk_ro_accessors(qw(
 
 #------------------------------------------------------------------------------
 
+my %running_servers;
+
+sub CLEANUP {
+    for my $server (values %running_servers) {
+        _kill_server($server);
+    }
+    exit(0);
+}
+$SIG{$_} = \&CLEANUP for qw( HUP INT QUIT TERM );
+
+#------------------------------------------------------------------------------
+
 sub repo_path       { shift->root_path->subdir('repo')     }
 sub conf_path       { shift->repo_path->subdir('conf')     }
 sub server_pid_file { shift->conf_path->file('server.pid') }
@@ -71,6 +83,7 @@ sub _init {
 sub DESTROY {
     my ($self) = @_;
     _kill_server($self->{server}) if defined $self->{server};
+    delete $running_servers{$self->{server}};
     $self->root_path->rmtree unless $self->keep_files;
 }
 
@@ -130,6 +143,7 @@ sub _spawn_server {
         my $started = 0;
         try {
             $self->{server} = $self->_try_spawn_server($port);
+            $running_servers{$self->{server}} = $self->{server};
             $self->{port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
