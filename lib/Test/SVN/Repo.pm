@@ -1,81 +1,25 @@
 package Test::SVN::Repo;
 # ABSTRACT: Authenticated subversion repositories for testing
 
-use Moose;
-use MooseX::Types::Path::Class;
-use namespace::autoclean;
-
 use Carp        qw( croak );
 use IPC::Run    qw( run );
 use File::Temp  qw( tempdir );
+use Path::Class ();
 use Try::Tiny;
 
-use base 'Test::Builder::Module';
+use base qw( Class::Accessor Test::Builder::Module );
 
-has 'root_path' => (
-    is          => 'ro',
-    isa         => 'Path::Class::Dir',
-    coerce      => 1,
-    default     => sub { tempdir },
-);
-
-has 'users' => (
-    is         => 'ro',
-    isa        => 'HashRef[Str]',
-    predicate  => 'has_auth'
-);
-
-has 'keep_files' => (
-    is      => 'ro',
-    isa     => 'Bool',
-    default => 0,
-);
-
-has 'verbose' => (
-    is      => 'ro',
-    isa     => 'Bool',
-    default => 0,
-);
-
-has 'start_port' => (
-    is          => 'ro',
-    isa         => 'Int',
-    default     => 1024,
-);
-
-has 'end_port' => (
-    is          => 'ro',
-    isa         => 'Int',
-    default     => 65535,
-);
-
-has 'retry_count' => (
-    is          => 'ro',
-    isa         => 'Int',
-    default     => 100,
-);
-
-#------------------------------------------------------------------------------
-
-has 'port' => (
-    is          => 'ro',
-    isa         => 'Int',
-    init_arg    => undef,
-    writer      => '_set_port',
-);
-
-has 'server_pid' => (
-    is          => 'ro',
-    isa         => 'Int',
-    init_arg    => undef,
-    writer      => '_set_server_pid',
-);
+__PACKAGE__->mk_ro_accessors(qw(
+        root_path users keep_files verbose start_port end_port retry_count
+        port server_pid
+    ));
 
 #------------------------------------------------------------------------------
 
 sub repo_path       { shift->root_path->subdir('repo')     }
 sub conf_path       { shift->repo_path->subdir('conf')     }
 sub server_pid_file { shift->conf_path->file('server.pid') }
+sub has_auth        { exists $_[0]->{users} }
 
 sub url {
     my ($self) = @_;
@@ -86,7 +30,30 @@ sub url {
 
 #------------------------------------------------------------------------------
 
-sub BUILD {
+sub new {
+    my ($class, %args) = @_;
+    my $self = {};
+
+    $self->{root_path}   = Path::Class::Dir->new(
+                            _defined_or($args{root_path}, tempdir));
+    $self->{users}       = $args{users} if exists $args{users};
+    $self->{keep_files}  = _defined_or($args{keep_files}, 0);
+    $self->{verbose}     = _defined_or($args{verbose}, 0);
+    $self->{start_port}  = _defined_or($args{start_port}, 1024);
+    $self->{end_port}    = _defined_or($args{end_port}, 65535);
+    $self->{retry_count} = _defined_or($args{retry_count}, 100);
+
+    bless $self, $class;
+
+    return $self->_init;
+}
+
+sub _defined_or {
+    my ($arg, $default) = @_;
+    return defined $arg ? $arg : $default;
+}
+
+sub _init {
     my ($self) = @_;
 
     my $repo_dir = $self->repo_path;
@@ -98,9 +65,10 @@ sub BUILD {
         $self->_setup_auth;
         $self->_spawn_server;   # this will die if it fails
     }
+    return $self;
 }
 
-sub DEMOLISH {
+sub DESTROY {
     my ($self) = @_;
     $self->_kill_server if defined $self->server_pid;
     $self->root_path->rmtree unless $self->keep_files;
@@ -164,8 +132,8 @@ sub _spawn_server {
         my $started = 0;
         try {
             $self->_try_spawn_server($port);
-            $self->_set_port($port);
-            $self->_set_server_pid($self->_get_server_pid);
+            $self->{port} = $port;
+            $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
                   'started on port ', $self->port) if $self->verbose;
             $started = 1;
@@ -239,7 +207,6 @@ sub _read_file {
     local $/ = <$fh>;
 }
 
-__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
