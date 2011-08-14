@@ -83,7 +83,7 @@ sub _init {
 sub DESTROY {
     my ($self) = @_;
     _kill_server($self->{server}) if defined $self->{server};
-    delete $running_servers{$self->{server}};
+    delete $running_servers{$self->{server}} if defined $self->{server};
     $self->root_path->rmtree unless $self->keep_files;
 }
 
@@ -140,28 +140,16 @@ sub _spawn_server {
     my $port_range = $self->end_port - $self->start_port + 1;
     for (1 .. $retry_count) {
         my $port = _choose_random_port($base_port, $port_range);
-        my $started = 0;
-        try {
-            $self->{server} = $self->_try_spawn_server($port);
+
+        if ($self->_try_spawn_server($port)) {
             $running_servers{$self->{server}} = $self->{server};
             $self->{port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
                   ' started on port ', $self->port) if $self->verbose;
-            $started = 1;
+            return 1;
         }
-        catch {
-            chomp;
-            if (/Address already in use/) {
-                # retry if we hit a busy port
-                _diag("Port $port busy") if $self->verbose;
-            }
-            else {
-                # otherwise give up
-                die $_;
-            }
-        };
-        return 1 if $started;
+        _diag("Port $port busy") if $self->verbose;
     }
     die "Giving up after $retry_count attempts";
 }
@@ -184,13 +172,16 @@ sub _try_spawn_server {
 
     my ($in, $out, $err);
     my $h = start(\@cmd, \$in, \$out, \$err);
-
     while ($h->pumpable) {
-        return $h if -e $self->server_pid_file;
+        if (-e $self->server_pid_file) {
+            $self->{server} = $h;
+            return 1;
+        }
         $h->pump_nb;
     }
     $h->finish;
-    die $err if $err;
+    return 0 if ($err =~ /Address already in use/); # retry
+    die $err;
 }
 
 sub _get_server_pid {
@@ -291,6 +282,6 @@ Full path to the pid file created by svnserve.
 
 Full path to svnserve configuration directory.
 
-=for Pod::Coverage BUILD DEMOLISH
+=for Pod::Coverage CLEANUP
 
 =cut
