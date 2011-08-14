@@ -21,6 +21,33 @@ note 'Basic sanity checks'; {
     is(waitpid($pid, WNOHANG), -1, '... server has shutdown')
 }
 
+note 'Check authentication'; {
+    my $repo = Test::SVN::Repo->new( users => \%users );
+
+    my $tempdir = $repo->root_path->subdir('test');
+    my $file = create_file($tempdir->file('test.txt'), 'Test');
+
+    my @cmd = qw( svn import --non-interactive --no-auth-cache );
+    is(system(@cmd, '-m', 'import no auth', $tempdir, $repo->url),
+        256, '... import without auth fails okay');
+
+    is(system(@cmd, '-m', 'import bad user',
+              '--username' => 'unknown', '--password' => 'wrong',
+              $tempdir, $repo->url), 256, '... unknown user rejected');
+
+    is(system(@cmd, '-m', 'import bad password',
+              '--username' => 'userA', '--password' => 'wrong',
+              $tempdir, $repo->url), 256, '... bad password rejected');
+
+    for my $user (keys %users) {
+        my $pass = $users{$user};
+        is(system(@cmd, '-m', 'import correct auth',
+              '--username' => $user, '--password' => $pass,
+              create_file($tempdir->file($user, $user . '.txt'), $user)->dir,
+              $repo->url), 0, '... correct auth succeeds');
+    }
+}
+
 note 'Port range tests'; {
     my $repo = Test::SVN::Repo->new( users      => \%users,
                                      start_port => 50000,
@@ -46,3 +73,12 @@ note 'SVN binaries not available'; {
 }
 
 done_testing();
+
+#------------------------------------------------------------------------------
+
+sub create_file {
+    my ($path, @data) = @_;
+    $path->dir->mkpath;
+    print {$path->openw} @_;
+    return $path;
+}
