@@ -2,7 +2,7 @@ package Test::SVN::Repo;
 # ABSTRACT: Authenticated subversion repositories for testing
 
 use Carp        qw( croak );
-use IPC::Run    qw( start );
+use IPC::Run    qw( run start );
 use File::Temp  qw( tempdir );
 use Path::Class ();
 use Try::Tiny   qw( catch try );
@@ -68,9 +68,7 @@ sub _defined_or {
 sub _init {
     my ($self) = @_;
 
-    my $repo_dir = $self->repo_path;
-
-    $self->_do_cmd("svnadmin create $repo_dir");
+    $self->_create_repo;
     if ($self->has_auth) {
         croak 'users hash must contain at least one username/password pair'
             if scalar(keys %{ $self->users }) == 0;
@@ -118,13 +116,14 @@ END
 #    _diag(`find $conf_path -type f -print -exec cat {} \\;`);
 }
 
-sub _do_cmd {
-    my ($self, $command) = @_;
-    my $output = `$command` || $?;
+sub _create_repo {
+    my ($self) = @_;
 
-    croak "'$command' failed: $output" if $?;
-    _diag($command, $output) if $self->verbose;
-    return $output;
+    my @cmd = ('svnadmin', 'create', $self->repo_path);
+    my ($in, $out, $err);
+    run(\@cmd, \$in, \$out, \$err)
+        or croak $err;
+    _diag($command, $out) if $self->verbose;
 }
 
 sub _create_file {
