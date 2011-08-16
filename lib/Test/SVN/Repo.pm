@@ -1,5 +1,5 @@
 package Test::SVN::Repo;
-# ABSTRACT: Authenticated subversion repositories for testing
+# ABSTRACT: Subversion repository fixtures for testing
 
 use Carp        qw( croak );
 use IPC::Run    qw( run start );
@@ -49,7 +49,8 @@ sub new {
     $self->{root_path}   = Path::Class::Dir->new(
                             _defined_or($args{root_path}, tempdir));
     $self->{users}       = $args{users} if exists $args{users};
-    $self->{keep_files}  = _defined_or($args{keep_files}, 0);
+    $self->{keep_files}  = _defined_or($args{keep_files},
+                                defined($args{root_path})),
     $self->{verbose}     = _defined_or($args{verbose}, 0);
     $self->{start_port}  = _defined_or($args{start_port}, 1024);
     $self->{end_port}    = _defined_or($args{end_port}, 65535);
@@ -224,16 +225,17 @@ __END__
 
 =head1 SYNOPSIS
 
-    # Create a repo with no password authentication
-    my $repo = Test::SVN::Repo->new;
+    # Create a plain on-disk repo
+    $repo = Test::SVN::Repo->new;
 
-    # or, create a repo with password authentication
+    # Create a repo with password authenticated server
     $repo = Test::SVN::Repo->new(
-            users       => { joe => 'secret', fred => 'foobar' },
-            keep_files  => 1,
+            users => { joe => 'secret', fred => 'foobar' },
         );
 
     my $repo_url = $repo->url;
+
+    system("svn co $repo");     # do stuff with your new repo
 
 =head1 DESCRIPTION
 
@@ -242,23 +244,35 @@ Create a temporary subversion repository for testing.
 If no authentication is required, a simple on-disk repo is created.
 An svnserve instance is created when authentication is required.
 
-=head1 ATTRIBUTES
+=head1 METHODS
 
-=head2 users
+=head2 new
+
+Constructor. Creates a subversion repository.
+
+Arguments. All are optional.
+
+=over
+
+=item users
 
 Hashref containing username/password pairs.
 
 If this attribute is specified, there must be at least one user.
-If you want no users, don't specify this attribute.
+Specifying users causes an svnserve instance to be created.
+
+=item root_path
+
+Base path to create the repo. By default, a temporary directory is created,
+and deleted on exit.
+
+
+=back
+
 
 =head2 has_auth
 
 True if the users attribute was specified.
-
-=head2 root_path
-
-Base path to create the repo. By default, a temporary directory is created,
-and deleted on exit.
 
 =head2 keep_files
 
@@ -290,5 +304,7 @@ Full path to svnserve configuration directory.
 Thanks to Strategic Data for sponsoring the development of this module.
 
 =for Pod::Coverage CLEANUP
+=for test_synopsis
+my ($repo);
 
 =cut
