@@ -281,6 +281,10 @@ Full path to the pid file created by svnserve.
 
 Full path to svnserve configuration directory.
 
+=head1 ACKNOWLEDGEMENTS
+
+Thanks to Strategic Data for sponsoring the development of this module.
+
 =for Pod::Coverage CLEANUP
 
 =cut

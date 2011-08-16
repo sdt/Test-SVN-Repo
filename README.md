@@ -69,6 +69,10 @@ Full path to the pid file created by svnserve.
 
 Full path to svnserve configuration directory.
 
+# ACKNOWLEDGEMENTS
+
+Thanks to Strategic Data for sponsoring the development of this module.
+
 # AUTHOR
 
 Stephen Thirlwall <sdt@cpan.org>
