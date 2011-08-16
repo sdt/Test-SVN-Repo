@@ -1,9 +1,13 @@
 #!/usr/bin/env perl
 
+use strict;
+use warnings;
+
 use Test::More tests => 19;
 use Test::Exception;
 
 use Config;
+use IPC::Cmd qw( can_run run );
 use IPC::Run ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
@@ -11,9 +15,11 @@ BEGIN { use_ok( 'Test::SVN::Repo' ) }
 my %sig_num;
 @sig_num{split ' ', $Config{sig_name}} = split ' ', $Config{sig_num};
 
+my $svn;
+
 SKIP: {
     skip 'Subversion not installed', 18
-        unless can_run('svn');
+        unless ($svn = can_run('svn'));
 
     my %users = ( userA => 'passA', userB => 'passB' );
 
@@ -23,7 +29,7 @@ SKIP: {
             '... ctor lives';
         isa_ok($repo, 'Test::SVN::Repo', '...');
         like($repo->url, qr(^svn://), '... url is svn://');
-        is(system('svn', 'info', $repo->url), 0, '... is a valid repo');
+        ok( run_ok($svn, 'info', $repo->url), '... is a valid repo');
 
         my $pid = $repo->server_pid;
         undef $repo;
@@ -37,23 +43,23 @@ SKIP: {
         my $file = create_file($tempdir->file('test.txt'), 'Test');
 
         my @cmd = qw( svn import --non-interactive --no-auth-cache );
-        is(system(@cmd, '-m', 'import no auth', $tempdir, $repo->url),
-            256, '... import without auth fails okay');
+        ok( ! run_ok(@cmd, '-m', 'import no auth', $tempdir, $repo->url),
+            '... import without auth fails okay');
 
-        is(system(@cmd, '-m', 'import bad user',
+        ok( ! run_ok(@cmd, '-m', 'import bad user',
                 '--username' => 'unknown', '--password' => 'wrong',
-                $tempdir, $repo->url), 256, '... unknown user rejected');
+                $tempdir, $repo->url), '... unknown user rejected');
 
-        is(system(@cmd, '-m', 'import bad password',
+        ok( ! run_ok(@cmd, '-m', 'import bad password',
                 '--username' => 'userA', '--password' => 'wrong',
-                $tempdir, $repo->url), 256, '... bad password rejected');
+                $tempdir, $repo->url), '... bad password rejected');
 
         for my $user (keys %users) {
             my $pass = $users{$user};
-            is(system(@cmd, '-m', 'import correct auth',
+            ok(run_ok(@cmd, '-m', 'import correct auth',
                 '--username' => $user, '--password' => $pass,
                 create_file($tempdir->file($user, $user . '.txt'), $user)->dir,
-                $repo->url), 0, '... correct auth succeeds');
+                $repo->url), '... correct auth succeeds');
         }
     }
 
@@ -80,7 +86,8 @@ SKIP: {
         for my $signame (qw( HUP INT QUIT TERM )) {
             my $pid = spawn_and_signal($sig_num{$signame});
 
-            # Check that the server (grandchild process) has exited
+            # Check that the server (grandchild process) exits if we
+            # kill its parent
             ok(! process_exists($pid), '... svnserve process has shutdown after receiving signal ' . $signame)
         }
     }
@@ -94,11 +101,6 @@ SKIP: {
 
 #------------------------------------------------------------------------------
 
-sub can_run {
-    my (@cmd) = @_;
-    return (system(@cmd) != -1);
-}
-
 sub create_file {
     my ($path, @data) = @_;
     $path->dir->mkpath;
@@ -111,6 +113,11 @@ sub process_exists {
     return kill(0, 0+$pid);
 }
 
+sub run_ok {
+    my (@cmd) = @_;
+    return scalar run( command => \@cmd );
+}
+
 sub spawn_and_signal {
     my ($signal) = @_;
 
@@ -120,17 +127,17 @@ print $repo->server_pid, "\n";
 1 while 1;
 END
 
-    # Spawn a sub-process that starts a server.
+    # Spawn a child process that starts a server (grandchild process).
     my @cmd = ( qw( perl -MTest::SVN::Repo -e ), $code);
     my ($in, $out, $err);
     my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
 
-    # Obtain the server pid
+    # Obtain the server pid (grandchild)
     $h->pump;
     my $pid = $out;
     chomp $pid;
 
-    # Kill the sub-process
+    # Kill the child process
     $h->signal($signal);
     $h->finish;
 

@@ -1,23 +1,30 @@
 #!/usr/bin/env perl
 
+use strict;
+use warnings;
+
 use Test::More tests => 22;
 use Test::Exception;
 
 use File::Temp  qw( tempdir );
+use IPC::Cmd    qw( can_run run );
 use Path::Class ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
 
+my $svn;
+
 SKIP: {
     skip 'Subversion not installed', 21
-        unless can_run('svn');
+        unless ($svn = can_run('svn'));
 
     note 'Basic sanity checks'; {
         my $repo;
         lives_ok { $repo = Test::SVN::Repo->new } '... ctor lives';
         isa_ok($repo, 'Test::SVN::Repo', '...');
         like($repo->url, qr(^file://), '... url is file://');
-        is(system('svn', 'info', $repo->url), 0, '... is a valid repo')
+        ok( my $ok = run( command => [ $svn, 'info', $repo->url ] ),
+            '... is a valid repo');
     }
 
     note 'Automatic temporary directory handling with cleanup'; {
@@ -80,11 +87,3 @@ SKIP: {
     }
 
 }; # end SKIP
-
-#------------------------------------------------------------------------------
-
-sub can_run {
-    my (@cmd) = @_;
-    return (system(@cmd) != -1);
-}
-
