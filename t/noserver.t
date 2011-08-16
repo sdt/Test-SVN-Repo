@@ -3,8 +3,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Test::Exception;
+use Test::NoWarnings;
 
 use File::Temp  qw( tempdir );
 use IPC::Cmd    qw( can_run run );
