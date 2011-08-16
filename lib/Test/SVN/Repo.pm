@@ -80,8 +80,11 @@ sub _init {
 
 sub DESTROY {
     my ($self) = @_;
-    _kill_server($self->{server}) if defined $self->{server};
-    delete $running_servers{$self->{server}} if defined $self->{server};
+    if (defined $self->{server}) {
+        _diag('Shutting down server pid ', $self->server_pid) if $self->verbose;
+        _kill_server($self->{server});
+        delete $running_servers{$self->{server}};
+    }
     $self->root_path->rmtree unless $self->keep_files;
 }
 
@@ -123,7 +126,8 @@ sub _create_repo {
     my ($in, $out, $err);
     run(\@cmd, \$in, \$out, \$err)
         or croak $err;
-    _diag($command, $out) if $self->verbose;
+    _diag($command, $out) if $out && $self->verbose;
+    _diag($command, $err) if $err && $self->verbose;
 }
 
 sub _create_file {
