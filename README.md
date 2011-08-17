@@ -1,6 +1,6 @@
 # NAME
 
-Test::SVN::Repo - Authenticated subversion repositories for testing
+Test::SVN::Repo - Subversion repository fixtures for testing
 
 # VERSION
 
@@ -8,66 +8,92 @@ version 0.001
 
 # SYNOPSIS
 
-    # Create a repo with no password authentication
-    my $repo = Test::SVN::Repo->new;
+    # Create a plain on-disk repo
+    $repo = Test::SVN::Repo->new;
 
-    # or, create a repo with password authentication
+    # Create a repo with password authenticated server
     $repo = Test::SVN::Repo->new(
-            users       => { joe => 'secret', fred => 'foobar' },
-            keep_files  => 1,
+            users => { joe => 'secret', fred => 'foobar' },
         );
 
     my $repo_url = $repo->url;
 
+    system("svn co $repo");     # do stuff with your new repo
+
 # DESCRIPTION
 
-Create a temporary subversion repository for testing.
+Create temporary subversion repositories for testing.
 
 If no authentication is required, a simple on-disk repo is created.
 An svnserve instance is created when authentication is required.
 
-# ATTRIBUTES
+Repositories and servers are cleaned up when the object is destroyed.
 
-## users
+# METHODS
 
-Hashref containing username/password pairs.
+## CONSTRUCTOR
+
+Creates a new svn repository, spawning an svnserve server if authentication
+is required.
+
+Arguments. All are optional.
+
+- users
+
+Hashref containing username/password pairs for repository authentication.
 
 If this attribute is specified, there must be at least one user.
-If you want no users, don't specify this attribute.
+Specifying users causes an svnserve instance to be created.
 
-## has_auth
-
-True if the users attribute was specified.
-
-## root_path
+- root_path
 
 Base path to create the repo. By default, a temporary directory is created,
 and deleted on exit.
 
-## keep_files
+- keep_files
 
-Prevent root_path from being deleted.
-Defaults to true if root_path is specified, false otherwise.
+Prevent root_path from being deleted in the destructor.
 
-## verbose
+If root_path is provided in the constructor, it will be preserved by default.
+If no root_path is provided, and a temporary directory is created, it will
+be destroyed by default.
 
-Verbose output.
+- verbose
 
-## url
+Verbose output. Default off.
 
-URL form of repo_path.
+- start_port end_port retry_count
 
-## repo_path
+Server mode only.
+
+In order to find a free port for the server, ports are randomly selected from
+the range [start_port, end_port] until one succeeds. Gives up after retry_count
+failures.
+
+Default values: 1024, 65536, 1000
+
+## READ-ONLY ACCESSORS
+
+### url
+
+Repository URL.
+
+### repo_path
 
 Local path to the SVN repository.
 
-## server_pid_file
+### is_authenticated
 
-Full path to the pid file created by svnserve.
+True if the the svn repo requires authorisation.
+This is enabled by supplying a users hashref to the constructor.
 
-## conf_path
+### server_pid
 
-Full path to svnserve configuration directory.
+Process id of the svnserve process.
+
+### server_port
+
+Listen port of the svnserve process.
 
 # ACKNOWLEDGEMENTS
 

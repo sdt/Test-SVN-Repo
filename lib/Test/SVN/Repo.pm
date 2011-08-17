@@ -11,7 +11,7 @@ use base qw( Class::Accessor Test::Builder::Module );
 
 __PACKAGE__->mk_ro_accessors(qw(
         root_path users keep_files verbose start_port end_port retry_count
-        port server_pid
+        server_port server_pid
     ));
 
 #------------------------------------------------------------------------------
@@ -28,15 +28,13 @@ $SIG{$_} = \&CLEANUP for qw( HUP INT QUIT TERM );
 
 #------------------------------------------------------------------------------
 
-sub repo_path       { shift->root_path->subdir('repo')     }
-sub conf_path       { shift->repo_path->subdir('conf')     }
-sub server_pid_file { shift->conf_path->file('server.pid') }
-sub has_auth        { exists $_[0]->{users} }
+sub repo_path        { shift->root_path->subdir('repo') }
+sub is_authenticated { exists $_[0]->{users} }
 
 sub url {
     my ($self) = @_;
-    return $self->has_auth
-            ? 'svn://localhost:' . $self->port
+    return $self->is_authenticated
+            ? 'svn://localhost:' . $self->server_port
             : 'file://' . $self->repo_path;
 }
 
@@ -70,7 +68,7 @@ sub _init {
     my ($self) = @_;
 
     $self->_create_repo;
-    if ($self->has_auth) {
+    if ($self->is_authenticated) {
         croak 'users hash must contain at least one username/password pair'
             if scalar(keys %{ $self->users }) == 0;
         $self->_setup_auth;
@@ -95,7 +93,7 @@ sub _diag { __PACKAGE__->builder->diag(@_) }
 
 sub _setup_auth {
     my ($self) = @_;
-    my $conf_path = $self->conf_path;
+    my $conf_path = $self->_server_conf_path;
 
     _create_file($conf_path->file('svnserve.conf'), <<'END');
 [general]
@@ -147,10 +145,10 @@ sub _spawn_server {
 
         if ($self->_try_spawn_server($port)) {
             $running_servers{$self->{server}} = $self->{server};
-            $self->{port} = $port;
+            $self->{server_port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
-                  ' started on port ', $self->port) if $self->verbose;
+                  ' started on port ', $self->server_port) if $self->verbose;
             return 1;
         }
         _diag("Port $port busy") if $self->verbose;
@@ -169,7 +167,7 @@ sub _try_spawn_server {
                 '-d',           # daemon mode
                 '--foreground', # don't actually daemonize
                 '-r'            => $self->repo_path->stringify,
-                '--pid-file'    => $self->server_pid_file->stringify,
+                '--pid-file'    => $self->_server_pid_file->stringify,
                 '--listen-host' => 'localhost',
                 '--listen-port' => $port,
               );
@@ -177,7 +175,7 @@ sub _try_spawn_server {
     my ($in, $out, $err);
     my $h = start(\@cmd, \$in, \$out, \$err);
     while ($h->pumpable) {
-        if (-e $self->server_pid_file) {
+        if (-e $self->_server_pid_file) {
             $self->{server} = $h;
             return 1;
         }
@@ -191,7 +189,7 @@ sub _try_spawn_server {
 sub _get_server_pid {
     my ($self) = @_;
     my $retry_count = 5;
-    my $pid_filename = $self->server_pid_file;
+    my $pid_filename = $self->_server_pid_file;
     for (1 .. $retry_count) {
         my $pid;
         try {
@@ -217,6 +215,9 @@ sub _read_file {
     local $/ = <$fh>;
 }
 
+sub _server_conf_path { shift->repo_path->subdir('conf') }
+
+sub _server_pid_file  { shift->_server_conf_path->file('server.pid') }
 1;
 
 __END__
@@ -239,17 +240,19 @@ __END__
 
 =head1 DESCRIPTION
 
-Create a temporary subversion repositories for testing.
+Create temporary subversion repositories for testing.
 
 If no authentication is required, a simple on-disk repo is created.
-
 An svnserve instance is created when authentication is required.
+
+Repositories and servers are cleaned up when the object is destroyed.
 
 =head1 METHODS
 
-=head2 new
+=head2 CONSTRUCTOR
 
-Constructor. Creates a subversion repository.
+Creates a new svn repository, spawning an svnserve server if authentication
+is required.
 
 Arguments. All are optional.
 
@@ -257,7 +260,7 @@ Arguments. All are optional.
 
 =item users
 
-Hashref containing username/password pairs.
+Hashref containing username/password pairs for repository authentication.
 
 If this attribute is specified, there must be at least one user.
 Specifying users causes an svnserve instance to be created.
@@ -267,13 +270,7 @@ Specifying users causes an svnserve instance to be created.
 Base path to create the repo. By default, a temporary directory is created,
 and deleted on exit.
 
-=back
-
-=head2 has_auth
-
-True if the users attribute was specified.
-
-=head2 keep_files
+=item keep_files
 
 Prevent root_path from being deleted in the destructor.
 
@@ -281,25 +278,44 @@ If root_path is provided in the constructor, it will be preserved by default.
 If no root_path is provided, and a temporary directory is created, it will
 be destroyed by default.
 
-=head2 verbose
+=item verbose
 
-Verbose output.
+Verbose output. Default off.
 
-=head2 url
+=item start_port end_port retry_count
 
-URL form of repo_path.
+Server mode only.
 
-=head2 repo_path
+In order to find a free port for the server, ports are randomly selected from
+the range [start_port, end_port] until one succeeds. Gives up after retry_count
+failures.
+
+Default values: 1024, 65536, 1000
+
+=back
+
+=head2 READ-ONLY ACCESSORS
+
+=head3 url
+
+Repository URL.
+
+=head3 repo_path
 
 Local path to the SVN repository.
 
-=head2 server_pid_file
+=head3 is_authenticated
 
-Full path to the pid file created by svnserve.
+True if the the svn repo requires authorisation.
+This is enabled by supplying a users hashref to the constructor.
 
-=head2 conf_path
+=head3 server_pid
 
-Full path to svnserve configuration directory.
+Process id of the svnserve process.
+
+=head3 server_port
+
+Listen port of the svnserve process.
 
 =head1 ACKNOWLEDGEMENTS
 

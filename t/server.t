@@ -68,7 +68,7 @@ SKIP: {
         my $repo = Test::SVN::Repo->new( users      => \%users,
                                         start_port => 50000,
                                         end_port   => 60000 );
-        my $port = $repo->port;
+        my $port = $repo->server_port;
         ok($port >= $repo->start_port, '... port is within specified range');
         ok($port <= $repo->end_port,   '... port is within specified range');
 
