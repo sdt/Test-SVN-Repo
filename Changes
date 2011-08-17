@@ -1,7 +1,10 @@
-Revision History for Test-SVN-Repo
-==================================
+Revision History for perl module Test::SVN::Repo
 
-Test-SVN-Repo-0.001
+0.002 2011-08-17
 
-* initial revision
+    - Added missing META.yml
+    - Fixed format of Changes file
 
+0.001 2011-08-17
+
+    - Initial release
