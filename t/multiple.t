@@ -16,7 +16,7 @@ BEGIN { use_ok( 'Test::SVN::Repo' ) }
 my $svn;
 
 SKIP: {
-    skip 'Subversion not installed', 28
+    skip 'Subversion not installed', 30
         unless ($svn = can_run('svn'));
 
     note 'Multiple on-disk repos'; {

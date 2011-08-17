@@ -1,5 +1,9 @@
 Revision History for perl module Test::SVN::Repo
 
+0.003 2011-08-18
+
+    - Fixed skip-tests count in t/multiple.t
+
 0.002 2011-08-17
 
     - Added missing META.yml
