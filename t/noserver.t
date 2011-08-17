@@ -36,7 +36,7 @@ SKIP: {
         ok(scalar($path->children) > 0, '... root path is non-empty');
 
         undef $repo;
-        ok(! -d $path, '... ! -d root path got cleaned up');
+        ok(! -d $path, '... root path got cleaned up');
     }
 
     note 'Automatic temporary directory handling no cleanup'; {
@@ -55,7 +55,7 @@ SKIP: {
 
     note 'Manual temporary directory handling with cleanup'; {
         my $tempdir = tempdir();
-        my $repo = Test::SVN::Repo->new ( root_path => $tempdir );
+        my $repo = Test::SVN::Repo->new ( root_path => $tempdir, keep_files => 0 );
         my $path = $repo->root_path;
 
         is($tempdir, $path->stringify, '... manual path is the one used');
@@ -63,12 +63,12 @@ SKIP: {
         ok(scalar($path->children) > 0, '... root path is non-empty');
 
         undef $repo;
-        ok(! -d $path, '... ! -d root path got cleaned up');
+        ok(! -d $path, '... root path got cleaned up');
     }
 
     note 'Manual temporary directory handling without cleanup'; {
         my $tempdir = tempdir();
-        my $repo = Test::SVN::Repo->new ( root_path => $tempdir, keep_files => 1 );
+        my $repo = Test::SVN::Repo->new ( root_path => $tempdir );
         my $path = $repo->root_path;
 
         is($tempdir, $path->stringify, '... manual path is the one used');

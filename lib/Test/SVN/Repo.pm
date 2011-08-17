@@ -239,9 +239,10 @@ __END__
 
 =head1 DESCRIPTION
 
-Create a temporary subversion repository for testing.
+Create a temporary subversion repositories for testing.
 
 If no authentication is required, a simple on-disk repo is created.
+
 An svnserve instance is created when authentication is required.
 
 =head1 METHODS
@@ -266,9 +267,7 @@ Specifying users causes an svnserve instance to be created.
 Base path to create the repo. By default, a temporary directory is created,
 and deleted on exit.
 
-
 =back
-
 
 =head2 has_auth
 
@@ -276,8 +275,11 @@ True if the users attribute was specified.
 
 =head2 keep_files
 
-Prevent root_path from being deleted.
-Defaults to true if root_path is specified, false otherwise.
+Prevent root_path from being deleted in the destructor.
+
+If root_path is provided in the constructor, it will be preserved by default.
+If no root_path is provided, and a temporary directory is created, it will
+be destroyed by default.
 
 =head2 verbose
 
