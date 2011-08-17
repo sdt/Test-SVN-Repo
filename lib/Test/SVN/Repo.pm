@@ -247,6 +247,9 @@ An svnserve instance is created when authentication is required.
 
 Repositories and servers are cleaned up when the object is destroyed.
 
+Requires the C<svnadmin> and C<svnserve> external binaries. These are both
+included in standard Subversion releases.
+
 =head1 METHODS
 
 =head2 CONSTRUCTOR
