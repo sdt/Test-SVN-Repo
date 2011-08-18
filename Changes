@@ -2,7 +2,8 @@ Revision History for perl module Test::SVN::Repo
 
 0.004 2011-08-18
 
-    - Possible fixes for failing server shutdown tests
+    - Fix for failing tests 'svnserve process has shutdown'
+    - Fixed some broken diag messages
 
 0.003 2011-08-18
 

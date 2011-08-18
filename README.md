@@ -4,7 +4,7 @@ Test::SVN::Repo - Subversion repository fixtures for testing
 
 # VERSION
 
-version 0.003
+version 0.004
 
 # SYNOPSIS
 
