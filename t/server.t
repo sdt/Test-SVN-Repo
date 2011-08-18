@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 24;
 use Test::Exception;
 use Test::NoWarnings;
 
@@ -19,7 +19,7 @@ my %sig_num;
 my $svn;
 
 SKIP: {
-    skip 'Subversion not installed', 18
+    skip 'Subversion not installed', 22
         unless ($svn = can_run('svn'));
 
     my %users = ( userA => 'passA', userB => 'passB' );
@@ -87,6 +87,8 @@ SKIP: {
         for my $signame (qw( HUP INT QUIT TERM )) {
             my $pid = spawn_and_signal($sig_num{$signame});
 
+            like($pid, qr/^\d+$/, '... got valid pid for server process');
+
             # Check that the server (grandchild process) exits if we
             # kill its parent
             ok(! process_exists($pid), '... svnserve process has shutdown after receiving signal ' . $signame)
@@ -111,7 +113,7 @@ sub create_file {
 
 sub process_exists {
     my ($pid) = @_;
-    return kill(0, 0+$pid);
+    return kill(0, $pid);
 }
 
 sub run_ok {
@@ -124,6 +126,7 @@ sub spawn_and_signal {
 
     my $code = <<'END';
 my $repo = Test::SVN::Repo->new( users => { a => 'b' } );
+$| = 1;
 print $repo->server_pid, "\n";
 1 while 1;
 END
