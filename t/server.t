@@ -137,9 +137,12 @@ END
     my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
 
     # Obtain the server pid (grandchild)
-    $h->pump;
-    my $pid = $out;
-    chomp $pid;
+    my $pid;
+    while (not $pid) {
+        $h->pump;
+        $pid = $out;
+        chomp $pid;
+    }
 
     # Kill the child process
     $h->signal($signal);
