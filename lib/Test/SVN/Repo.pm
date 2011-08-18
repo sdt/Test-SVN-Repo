@@ -1,6 +1,9 @@
 package Test::SVN::Repo;
 # ABSTRACT: Subversion repository fixtures for testing
 
+use strict;
+use warnings;
+
 use Carp        qw( croak );
 use IPC::Run    qw( run start );
 use File::Temp  qw( tempdir );
@@ -125,8 +128,8 @@ sub _create_repo {
     my ($in, $out, $err);
     run(\@cmd, \$in, \$out, \$err)
         or croak $err;
-    _diag($command, $out) if $out && $self->verbose;
-    _diag($command, $err) if $err && $self->verbose;
+    _diag(join(' ', @cmd), $out) if $out && $self->verbose;
+    _diag(join(' ', @cmd), $err) if $err && $self->verbose;
 }
 
 sub _create_file {
