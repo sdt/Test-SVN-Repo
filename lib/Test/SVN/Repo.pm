@@ -9,6 +9,7 @@ use IPC::Run    qw( run start );
 use File::Temp  qw( tempdir );
 use Path::Class ();
 use Try::Tiny   qw( catch try );
+use URI::file   ();
 
 use base qw( Class::Accessor Test::Builder::Module );
 
@@ -38,7 +39,7 @@ sub url {
     my ($self) = @_;
     return $self->is_authenticated
             ? 'svn://localhost:' . $self->server_port
-            : 'file://' . $self->repo_path;
+            : URI::file->new($self->repo_path);
 }
 
 #------------------------------------------------------------------------------
@@ -86,6 +87,11 @@ sub DESTROY {
         _diag('Shutting down server pid ', $self->server_pid) if $self->verbose;
         _kill_server($self->{server});
         delete $running_servers{$self->{server}};
+        # wait until we can manually unlink the pid file - on Win32 it can
+        # still be locked and the rmtree fails
+        while (not unlink $self->_server_pid_file) {
+            _sleep(0.1);
+        }
     }
     $self->root_path->rmtree unless $self->keep_files;
 }
@@ -191,25 +197,17 @@ sub _try_spawn_server {
 
 sub _get_server_pid {
     my ($self) = @_;
-    my $retry_count = 5;
-    my $pid_filename = $self->_server_pid_file;
-    for (1 .. $retry_count) {
-        my $pid;
-        try {
-            $pid = _read_file($pid_filename);
-            chomp $pid;
-        }
-        catch {
-            _diag('... retry');
-            sleep 1; # svnserve may not have written its file yet
-        };
-        return $pid if defined $pid;
-    }
-    croak "Can't find pid file $pid_filename";
+
+    # We've already established that the server file exists
+    my $pid = _read_file($self->_server_pid_file);
+    chomp $pid;
+    return $pid;
 }
 
 sub _kill_server {
     my ($server) = @_;
+    # kill_kill takes forever on Win32
+    $server->signal('KILL') if $^O eq 'MSWin32';
     $server->kill_kill, grace => 5;
 }
 
@@ -221,6 +219,12 @@ sub _read_file {
 sub _server_conf_path { shift->repo_path->subdir('conf') }
 
 sub _server_pid_file  { shift->_server_conf_path->file('server.pid') }
+
+sub _sleep {
+    my ($duration) = @_;                    # opted to avoid another dependency
+    select(undef, undef, undef, $duration)  ## no critic ProhibitSleepViaSelect
+}
+
 1;
 
 __END__

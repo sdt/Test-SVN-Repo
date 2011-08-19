@@ -1,5 +1,13 @@
 Revision History for perl module Test::SVN::Repo
 
+{{$NEXT}}
+
+    - Fix for slow server shutdown on Win32
+    - Fix for file::// uris on Win32
+    - Fix for server pid file not being deleted on Win32
+    - Possible fix for 'process ended prematurely' error in server.t
+    - Skipping some server.t tests on Win32
+
 0.004 2011-08-18
 
     - Fix for failing tests 'svnserve process has shutdown'

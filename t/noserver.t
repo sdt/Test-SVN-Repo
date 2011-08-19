@@ -25,7 +25,7 @@ SKIP: {
         isa_ok($repo, 'Test::SVN::Repo', '...');
         like($repo->url, qr(^file://), '... url is file://');
         ok( my $ok = run( command => [ $svn, 'info', $repo->url ] ),
-            '... is a valid repo');
+            '... ' . $repo->url . ' is a valid repo');
     }
 
     note 'Automatic temporary directory handling with cleanup'; {
