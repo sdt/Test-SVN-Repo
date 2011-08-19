@@ -1,6 +1,6 @@
 Revision History for perl module Test::SVN::Repo
 
-{{$NEXT}}
+0.005 2011-08-19
 
     - Fix for slow server shutdown on Win32
     - Fix for file::// uris on Win32

@@ -89,7 +89,7 @@ SKIP: {
 
     note 'Check that svnserve gets cleaned up'; {
 
-	for my $signame (qw( HUP INT QUIT TERM )) {
+        for my $signame (qw( HUP INT QUIT TERM )) {
             my $pid;
             lives_ok { $pid = spawn_and_signal($sig_num{$signame}) }
                 '... child process started okay';
