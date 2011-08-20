@@ -13,9 +13,6 @@ use IPC::Run ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
 
-my %sig_num;
-@sig_num{split ' ', $Config{sig_name}} = split ' ', $Config{sig_num};
-
 my $svn;
 
 SKIP: {
@@ -91,7 +88,7 @@ SKIP: {
 
         for my $signame (qw( HUP INT QUIT TERM )) {
             my $pid;
-            lives_ok { $pid = spawn_and_signal($sig_num{$signame}) }
+            lives_ok { $pid = spawn_and_signal($signame) }
                 '... child process started okay';
 
             like($pid, qr/^\d+$/, '... got valid pid for server process');
