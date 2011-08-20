@@ -172,6 +172,7 @@ sub _choose_random_port {
 
 sub _try_spawn_server {
     my ($self, $port) = @_;
+    $ENV{LC_ALL} = 'en_US'; # we're checking messages - need fixed locale
     my @cmd = ( 'svnserve',
                 '-d',           # daemon mode
                 '--foreground', # don't actually daemonize
