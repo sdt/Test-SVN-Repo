@@ -67,6 +67,11 @@ SKIP: {
 
     note 'Port range tests'; {
 
+        # This mysteriously doesn't work on win32.
+        # I can manually start multiple svnserve instances on a single port.
+        # Its as if they get queued up - the first one serves the requests,
+        # and the second takes over once the first has exited.
+
         my $repo = Test::SVN::Repo->new( users      => \%users,
                                          start_port => 50000,
                                          end_port   => 60000 );
@@ -76,15 +81,19 @@ SKIP: {
 
         # Try creating a server on a port we know is taken
         my $retry_count = 5;
-        throws_ok { Test::SVN::Repo->new( users       => \%users,
-                                        start_port  => $port,
-                                        end_port    => $port,
-                                        retry_count => $retry_count ) }
+        throws_ok { Test::SVN::Repo->new(users       => \%users,
+                                         start_port  => $port,
+                                         end_port    => $port,
+                                         retry_count => $retry_count ) }
             qr/Giving up after $retry_count attempts/,
             '... server gives up if no ports available';
     }
 
     note 'Check that svnserve gets cleaned up'; {
+
+        # Killing the child process doesn't seem to work on win32.
+        # IPC::Run confirms this behaviour. Processes can only be KILLED
+        # under win32.
 
         for my $signame (qw( HUP INT QUIT TERM )) {
             my $pid;
