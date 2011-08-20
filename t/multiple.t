@@ -5,13 +5,14 @@ use warnings;
 
 use Test::More tests => 32;
 use Test::Exception;
-use Test::NoWarnings;
 
 use Config;
 use IPC::Cmd qw( can_run run );
 use IPC::Run ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
+
+use Test::NoWarnings;
 
 my $svn;
 

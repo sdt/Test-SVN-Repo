@@ -5,13 +5,14 @@ use warnings;
 
 use Test::More tests => 23;
 use Test::Exception;
-use Test::NoWarnings;
 
 use File::Temp  qw( tempdir );
 use IPC::Cmd    qw( can_run run );
 use Path::Class ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
+
+use Test::NoWarnings;
 
 my $svn;
 
