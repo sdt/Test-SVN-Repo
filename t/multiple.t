@@ -3,8 +3,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 32;
+use Test::More tests => 31 + ($ENV{RELEASE_TESTING} ? 1 : 0);
 use Test::Exception;
+require Test::NoWarnings if $ENV{RELEASE_TESTING};
 
 use Config;
 use IPC::Cmd qw( can_run run );
@@ -12,7 +13,6 @@ use IPC::Run ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
 
-use Test::NoWarnings;
 
 my $svn;
 
@@ -83,11 +83,13 @@ SKIP: {
 
 }; # end SKIP
 
+Test::NoWarnings::had_no_warnings() if $ENV{RELEASE_TESTING};
+
 #------------------------------------------------------------------------------
 
 sub process_exists {
     my ($pid) = @_;
-    return kill(0, 0+$pid);
+    return kill(0, $pid);
 }
 
 sub run_ok {

@@ -3,16 +3,15 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 22 + ($ENV{RELEASE_TESTING} ? 1 : 0);
 use Test::Exception;
+require Test::NoWarnings if $ENV{RELEASE_TESTING};
 
 use File::Temp  qw( tempdir );
 use IPC::Cmd    qw( can_run run );
 use Path::Class ();
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
-
-use Test::NoWarnings;
 
 my $svn;
 
@@ -89,3 +88,5 @@ SKIP: {
     }
 
 }; # end SKIP
+
+Test::NoWarnings::had_no_warnings() if $ENV{RELEASE_TESTING};
