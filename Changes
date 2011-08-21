@@ -1,5 +1,12 @@
 Revision History for perl module Test::SVN::Repo
 
+0.006 2011-08-21
+
+    - Fix for race condition in svnserve startup
+    - Locale change now only for local scope
+    - Locale change using LC_MESSAGES, not LC_ALL
+    - Test::NoWarnings enabled only for release testing
+
 0.005 2011-08-20
 
     - Fix for slow server shutdown on Win32
