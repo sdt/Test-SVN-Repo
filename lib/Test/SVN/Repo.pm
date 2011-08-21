@@ -200,10 +200,15 @@ sub _try_spawn_server {
 sub _get_server_pid {
     my ($self) = @_;
 
-    # We've already established that the server file exists
-    my $pid = _read_file($self->_server_pid_file);
-    chomp $pid;
-    return $pid;
+    # We've already established that the server file exists, but not that it
+    # has been written. Retry until we get some valid data in there.
+    while (1) {
+        my $data = _read_file($self->_server_pid_file);
+        if ($data =~ /^(\d+)\n$/ms) {
+            return $1;
+        }
+        _sleep(0.1);
+    }
 }
 
 sub _kill_server {
