@@ -57,6 +57,7 @@ sub new {
     $self->{start_port}  = _defined_or($args{start_port}, 1024);
     $self->{end_port}    = _defined_or($args{end_port}, 65535);
     $self->{retry_count} = _defined_or($args{retry_count}, 100);
+    $self->{pid}         = $$;
 
     bless $self, $class;
 
@@ -85,7 +86,8 @@ sub DESTROY {
     my ($self) = @_;
     if (defined $self->{server}) {
         _diag('Shutting down server pid ', $self->server_pid) if $self->verbose;
-        _kill_server($self->{server});
+        print STDERR "killing server from $$\n";
+        _kill_server($self->{server}) if $self->{pid} == $$;
         delete $running_servers{$self->{server}};
         # wait until we can manually unlink the pid file - on Win32 it can
         # still be locked and the rmtree fails

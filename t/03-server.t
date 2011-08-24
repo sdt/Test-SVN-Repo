@@ -113,18 +113,15 @@ SKIP: {
     note 'Forking'; {
 
         my $repo = Test::SVN::Repo->new( users => \%users );
-        ok(process_exists($repo->server_pid), '... created server');
+        ok(run_ok($svn, 'info', $repo->url), '... server is alive');
 
         lives_ok {
             my $pid = fork;
             die unless defined $pid;
             if ($pid) {
-                diag("Parent $$, child $pid\n");
                 waitpid($pid, 0);
-                diag("Child dead\n");
             }
             else {
-                diag("Child exiting\n");
                 exit 0;
             }
         } '... created child process';
