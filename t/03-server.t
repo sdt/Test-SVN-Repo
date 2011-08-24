@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 27 + ($ENV{RELEASE_TESTING} ? 1 : 0);
+use Test::More tests => 30 + ($ENV{RELEASE_TESTING} ? 1 : 0);
 use Test::Exception;
 require Test::NoWarnings if $ENV{RELEASE_TESTING};
 
@@ -16,7 +16,7 @@ BEGIN { use_ok( 'Test::SVN::Repo' ) }
 my $svn;
 
 SKIP: {
-    skip 'Subversion not installed', 26
+    skip 'Subversion not installed', 29
         unless ($svn = can_run('svn'));
 
     my %users = ( userA => 'passA', userB => 'passB' );
@@ -30,6 +30,7 @@ SKIP: {
         ok( run_ok($svn, 'info', $repo->url), '... is a valid repo');
 
         my $pid = $repo->server_pid;
+        ok(process_exists($pid), '... server is running');
         undef $repo;
         ok(! process_exists($pid), '... server has shutdown')
     }
@@ -109,9 +110,30 @@ SKIP: {
     }
 } # end SKIP Win32
 
-    note 'Verbose mode'; {
-        lives_ok { Test::SVN::Repo->new( users => \%users, verbose => 1 ) }
-            '... ctor lives';
+    note 'Forking'; {
+
+        my $repo = Test::SVN::Repo->new( users => \%users );
+        ok(process_exists($repo->server_pid), '... created server');
+
+        lives_ok {
+            my $pid = fork;
+            die unless defined $pid;
+            if ($pid) {
+                diag("Parent $$, child $pid\n");
+                waitpid($pid, 0);
+                diag("Child dead\n");
+            }
+            else {
+                diag("Child exiting\n");
+                exit 0;
+            }
+        } '... created child process';
+
+        my $ok;
+        ok($ok = run_ok($svn, 'info', $repo->url), '... server is still alive');
+
+        # This is a hack so that we don't hang if the test fails
+        delete $repo->{server} unless $ok;
     }
 
 }; # end SKIP no svn
