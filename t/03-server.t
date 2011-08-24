@@ -7,9 +7,9 @@ use Test::More tests => 27 + ($ENV{RELEASE_TESTING} ? 1 : 0);
 use Test::Exception;
 require Test::NoWarnings if $ENV{RELEASE_TESTING};
 
-use Config;
 use IPC::Cmd qw( can_run run );
 use IPC::Run ();
+use Probe::Perl;
 
 BEGIN { use_ok( 'Test::SVN::Repo' ) }
 
@@ -148,7 +148,8 @@ print $repo->server_pid, "\n";
 END
 
     # Spawn a child process that starts a server (grandchild process).
-    my @cmd = ( $Config{perlpath}, '-MTest::SVN::Repo', '-e' => $code);
+    my $perl = Probe::Perl->find_perl_interpreter;
+    my @cmd = ( $perl, '-MTest::SVN::Repo', '-e' => $code);
     my ($in, $out, $err);
     my $h = IPC::Run::start(\@cmd, \$in, \$out, \$err);
 
