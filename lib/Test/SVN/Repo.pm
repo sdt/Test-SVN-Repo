@@ -85,9 +85,10 @@ sub _init {
 sub DESTROY {
     my ($self) = @_;
     if (defined $self->{server}) {
-        _diag('Shutting down server pid ', $self->server_pid) if $self->verbose;
         if ($self->{pid} == $$) {
-            _kill_server($self->{server}) if $self->{pid} == $$;
+            _diag('Shutting down server pid ', $self->server_pid)
+                if $self->verbose;
+            _kill_server($self->{server});
             # wait until we can manually unlink the pid file - on Win32 it can
             # still be locked and the rmtree fails
             while (not unlink $self->_server_pid_file) {
