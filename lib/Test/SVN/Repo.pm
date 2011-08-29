@@ -86,16 +86,17 @@ sub DESTROY {
     my ($self) = @_;
     if (defined $self->{server}) {
         _diag('Shutting down server pid ', $self->server_pid) if $self->verbose;
-        print STDERR "killing server from $$\n";
-        _kill_server($self->{server}) if $self->{pid} == $$;
-        delete $running_servers{$self->{server}};
-        # wait until we can manually unlink the pid file - on Win32 it can
-        # still be locked and the rmtree fails
-        while (not unlink $self->_server_pid_file) {
-            _sleep(0.1);
+        if ($self->{pid} == $$) {
+            _kill_server($self->{server}) if $self->{pid} == $$;
+            # wait until we can manually unlink the pid file - on Win32 it can
+            # still be locked and the rmtree fails
+            while (not unlink $self->_server_pid_file) {
+                _sleep(0.1);
+            }
         }
+        delete $running_servers{$self->{server}};
     }
-    $self->root_path->rmtree unless $self->keep_files;
+    $self->root_path->rmtree if !$self->keep_files && ($self->{pid} == $$);
 }
 
 #------------------------------------------------------------------------------
