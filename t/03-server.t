@@ -63,7 +63,7 @@ SKIP: {
     }
 
 SKIP: {
-    skip 'Not valid for Win32', 15
+    skip 'Not valid for Win32', 18
        if $^O eq 'MSWin32';
 
     note 'Port range tests'; {
@@ -108,7 +108,6 @@ SKIP: {
             ok(! process_exists($pid), '... svnserve process has shutdown after receiving signal ' . $signame)
         }
     }
-} # end SKIP Win32
 
     note 'Forking'; {
 
@@ -133,6 +132,7 @@ SKIP: {
         delete $repo->{server} unless $ok;
     }
 
+}; # end SKIP Win32
 }; # end SKIP no svn
 
 Test::NoWarnings::had_no_warnings() if $ENV{RELEASE_TESTING};
