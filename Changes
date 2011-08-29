@@ -1,5 +1,11 @@
 Revision History for perl module Test::SVN::Repo
 
+0.007 2011-08-29
+
+    - Server no longer killed by child processes
+    - Tests using Probe::Perl instead of $Config{perlpath}
+    - Stronger checking in tests that svn is available and working
+
 0.006 2011-08-21
 
     - Fix for race condition in svnserve startup
