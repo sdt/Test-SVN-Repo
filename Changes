@@ -1,5 +1,9 @@
 Revision History for perl module Test::SVN::Repo
 
+0.008 2011-10-06
+
+    - Moved svn tests into Makefile, hoping to avoid cpan test failures
+
 0.007 2011-08-29
 
     - Server no longer killed by child processes
