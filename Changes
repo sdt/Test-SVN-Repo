@@ -1,5 +1,7 @@
 Revision History for perl module Test::SVN::Repo
 
+{{$NEXT}}
+
 0.008 2011-10-06
 
     - Moved svn tests into Makefile, hoping to avoid cpan test failures
