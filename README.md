@@ -4,7 +4,7 @@ Test::SVN::Repo - Subversion repository fixtures for testing
 
 # VERSION
 
-version 0.008
+version 0.009
 
 # SYNOPSIS
 
@@ -48,29 +48,29 @@ Hashref containing username/password pairs for repository authentication.
 If this attribute is specified, there must be at least one user.
 Specifying users causes an svnserve instance to be created.
 
-- root_path
+- root\_path
 
 Base path to create the repo. By default, a temporary directory is created,
 and deleted on exit.
 
-- keep_files
+- keep\_files
 
-Prevent root_path from being deleted in the destructor.
+Prevent root\_path from being deleted in the destructor.
 
-If root_path is provided in the constructor, it will be preserved by default.
-If no root_path is provided, and a temporary directory is created, it will
+If root\_path is provided in the constructor, it will be preserved by default.
+If no root\_path is provided, and a temporary directory is created, it will
 be destroyed by default.
 
 - verbose
 
 Verbose output. Default off.
 
-- start_port end_port retry_count
+- start\_port end\_port retry\_count
 
 Server mode only.
 
 In order to find a free port for the server, ports are randomly selected from
-the range [start_port, end_port] until one succeeds. Gives up after retry_count
+the range \[start\_port, end\_port\] until one succeeds. Gives up after retry\_count
 failures.
 
 Default values: 1024, 65536, 1000
@@ -81,20 +81,20 @@ Default values: 1024, 65536, 1000
 
 Repository URL.
 
-### repo_path
+### repo\_path
 
 Local path to the SVN repository.
 
-### is_authenticated
+### is\_authenticated
 
 True if the the svn repo requires authorisation.
 This is enabled by supplying a users hashref to the constructor.
 
-### server_pid
+### server\_pid
 
 Process id of the svnserve process.
 
-### server_port
+### server\_port
 
 Listen port of the svnserve process.
 
@@ -108,7 +108,7 @@ Stephen Thirlwall <sdt@cpan.org>
 
 # COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Stephen Thirlwall.
+This software is copyright (c) 2013 by Stephen Thirlwall.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
