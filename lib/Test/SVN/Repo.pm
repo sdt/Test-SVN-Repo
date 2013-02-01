@@ -39,7 +39,7 @@ sub url {
     my ($self) = @_;
     return $self->is_authenticated
             ? 'svn://localhost:' . $self->server_port
-            : URI::file->new($self->repo_path);
+            : URI::file->new($self->repo_path)->as_string;
 }
 
 #------------------------------------------------------------------------------

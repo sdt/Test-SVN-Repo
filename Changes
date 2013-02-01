@@ -2,6 +2,9 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+    - Fix url() return value https://github.com/sdt/Test-SVN-Repo/issues/7
+      - thanks to Tommy Stanton for the bug report
+
 0.008 2011-10-06
 
     - Moved svn tests into Makefile, hoping to avoid cpan test failures
