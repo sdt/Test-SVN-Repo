@@ -48,8 +48,8 @@ sub new {
     my ($class, %args) = @_;
     my $self = {};
 
-    $self->{root_path}   = Path::Class::Dir->new(
-                            _defined_or($args{root_path}, tempdir));
+    $self->{root_path}   = Path::Class::Dir->new(defined($args{root_path}) ?
+                                $args{root_path} : tempdir( CLEANUP => 1 ));
     $self->{users}       = $args{users} if exists $args{users};
     $self->{keep_files}  = _defined_or($args{keep_files},
                                 defined($args{root_path})),
