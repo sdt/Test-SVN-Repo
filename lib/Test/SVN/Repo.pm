@@ -29,6 +29,7 @@ sub CLEANUP {
     exit(0);
 }
 $SIG{$_} = \&CLEANUP for qw( HUP INT QUIT TERM );
+END { CLEANUP() }
 
 #------------------------------------------------------------------------------
 
