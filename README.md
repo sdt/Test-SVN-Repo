@@ -4,7 +4,7 @@ Test::SVN::Repo - Subversion repository fixtures for testing
 
 # VERSION
 
-version 0.009
+version 0.010
 
 # SYNOPSIS
 
@@ -43,37 +43,37 @@ Arguments. All are optional.
 
 - users
 
-Hashref containing username/password pairs for repository authentication.
+    Hashref containing username/password pairs for repository authentication.
 
-If this attribute is specified, there must be at least one user.
-Specifying users causes an svnserve instance to be created.
+    If this attribute is specified, there must be at least one user.
+    Specifying users causes an svnserve instance to be created.
 
 - root\_path
 
-Base path to create the repo. By default, a temporary directory is created,
-and deleted on exit.
+    Base path to create the repo. By default, a temporary directory is created,
+    and deleted on exit.
 
 - keep\_files
 
-Prevent root\_path from being deleted in the destructor.
+    Prevent root\_path from being deleted in the destructor.
 
-If root\_path is provided in the constructor, it will be preserved by default.
-If no root\_path is provided, and a temporary directory is created, it will
-be destroyed by default.
+    If root\_path is provided in the constructor, it will be preserved by default.
+    If no root\_path is provided, and a temporary directory is created, it will
+    be destroyed by default.
 
 - verbose
 
-Verbose output. Default off.
+    Verbose output. Default off.
 
 - start\_port end\_port retry\_count
 
-Server mode only.
+    Server mode only.
 
-In order to find a free port for the server, ports are randomly selected from
-the range \[start\_port, end\_port\] until one succeeds. Gives up after retry\_count
-failures.
+    In order to find a free port for the server, ports are randomly selected from
+    the range \[start\_port, end\_port\] until one succeeds. Gives up after retry\_count
+    failures.
 
-Default values: 1024, 65536, 1000
+    Default values: 1024, 65536, 1000
 
 ## READ-ONLY ACCESSORS
 

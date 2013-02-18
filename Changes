@@ -2,6 +2,11 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.010 2013-02-18
+
+    - Cleanup temporary directories in non-server mode
+    - Cleanup dangling servers in END block
+
 0.009 2013-02-01
 
     - Fix url() return value https://github.com/sdt/Test-SVN-Repo/issues/7
