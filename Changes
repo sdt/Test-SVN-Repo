@@ -2,6 +2,13 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.011 2013-02-20
+
+    - Fix regression from 0.010 - child process exit would kill global servers
+    - Added t/04-non-win32.t to house all non-win32 tests
+    - Extra server and root_path cleanup tests
+    - Simplified test plans and skipping
+
 0.010 2013-02-18
 
     - Cleanup temporary directories in non-server mode
