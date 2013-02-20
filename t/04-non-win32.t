@@ -42,12 +42,16 @@ note 'Port range tests'; {
 
     # Try creating a server on a port we know is taken
     my $retry_count = 5;
+    my $tempdir = File::Temp->newdir;
     throws_ok { Test::SVN::Repo->new(users       => \%users,
                                      start_port  => $port,
                                      end_port    => $port,
-                                     retry_count => $retry_count ) }
+                                     retry_count => $retry_count,
+                                     root_path   => $tempdir,
+                                     keep_files  => 0) }
         qr/Giving up after $retry_count attempts/,
         '... server gives up if no ports available';
+    ok(! -d $tempdir, '... and root path gets cleaned up');
 }
 
 note 'Check that svnserve gets cleaned up'; {
