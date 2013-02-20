@@ -101,6 +101,16 @@ note 'Forking'; {
         '... local server is still up');
 }
 
+note 'Exit time cleanup for non-server mode'; {
+    my $tempdir = File::Temp->newdir;
+    in_child(sub {
+        our $repo =
+            Test::SVN::Repo->new( root_path => $tempdir, keep_files => 0 );
+    });
+
+    ok(! -d $tempdir, '... root path got cleaned up');
+}
+
 Test::NoWarnings::had_no_warnings() if $ENV{RELEASE_TESTING};
 done_testing();
 
@@ -147,3 +157,13 @@ END
 
     return $pid;
 }
+
+sub in_child {
+    my $coderef = shift;
+    my $pid = fork;
+    return unless defined $pid;
+    exit($coderef->()) unless $pid;
+    waitpid($pid, 0);
+    return ($? >> 8);
+}
+
