@@ -62,6 +62,8 @@ sub new {
     $self->{pid}         = $$;
 
     bless $self, $class;
+    push(@instances, $self);
+    weaken($instances[-1]);
 
     return $self->_init;
 }
@@ -146,9 +148,6 @@ sub _spawn_server {
         my $port = _choose_random_port($base_port, $port_range);
 
         if ($self->_try_spawn_server($port)) {
-            push(@instances, $self);
-            weaken($instances[-1]);
-
             $self->{server_port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
