@@ -7,7 +7,7 @@ use Test::More;
 use Test::Exception;
 require Test::NoWarnings if $ENV{RELEASE_TESTING};
 
-use File::Temp  qw( tempdir );
+use File::Temp  ();
 use IPC::Cmd    qw( can_run run );
 use Path::Class ();
 
@@ -54,7 +54,7 @@ note 'Automatic temporary directory handling no cleanup'; {
 }
 
 note 'Manual temporary directory handling with cleanup'; {
-    my $tempdir = tempdir();
+    my $tempdir = File::Temp->newdir;
     my $repo = Test::SVN::Repo->new ( root_path => $tempdir, keep_files => 0 );
     my $path = $repo->root_path;
 
@@ -67,7 +67,7 @@ note 'Manual temporary directory handling with cleanup'; {
 }
 
 note 'Manual temporary directory handling without cleanup'; {
-    my $tempdir = tempdir();
+    my $tempdir = File::Temp->newdir;
     my $repo = Test::SVN::Repo->new ( root_path => $tempdir );
     my $path = $repo->root_path;
 
