@@ -4,12 +4,13 @@ package Test::SVN::Repo;
 use strict;
 use warnings;
 
-use Carp        qw( croak );
-use IPC::Run    qw( run start );
-use File::Temp  qw( tempdir );
-use Path::Class ();
-use Try::Tiny   qw( catch try );
-use URI::file   ();
+use Carp            qw( croak );
+use IPC::Run        qw( run start );
+use File::Temp      qw( tempdir );
+use Path::Class     ();
+use Scalar::Util    qw( weaken );
+use Try::Tiny       qw( catch try );
+use URI::file       ();
 
 use base qw( Class::Accessor Test::Builder::Module );
 
@@ -20,11 +21,12 @@ __PACKAGE__->mk_ro_accessors(qw(
 
 #------------------------------------------------------------------------------
 
-my %running_servers;
+my @instances; # these are all weak references, held for cleanup only
 
 sub CLEANUP {
-    for my $server (values %running_servers) {
-        _kill_server($server);
+    for my $instance (@instances) {
+        next unless $instance;
+        $instance->_cleanup_resources() if $instance;
     }
     exit(0);
 }
@@ -49,11 +51,10 @@ sub new {
     my ($class, %args) = @_;
     my $self = {};
 
-    $self->{root_path}   = Path::Class::Dir->new(defined($args{root_path}) ?
-                                $args{root_path} : tempdir( CLEANUP => 1 ));
+    $self->{root_path}   = Path::Class::Dir->new($args{root_path} || tempdir);
     $self->{users}       = $args{users} if exists $args{users};
     $self->{keep_files}  = _defined_or($args{keep_files},
-                                defined($args{root_path})),
+                                defined($args{root_path}));
     $self->{verbose}     = _defined_or($args{verbose}, 0);
     $self->{start_port}  = _defined_or($args{start_port}, 1024);
     $self->{end_port}    = _defined_or($args{end_port}, 65535);
@@ -85,20 +86,7 @@ sub _init {
 
 sub DESTROY {
     my ($self) = @_;
-    if (defined $self->{server}) {
-        if ($self->{pid} == $$) {
-            _diag('Shutting down server pid ', $self->server_pid)
-                if $self->verbose;
-            _kill_server($self->{server});
-            # wait until we can manually unlink the pid file - on Win32 it can
-            # still be locked and the rmtree fails
-            while (not unlink $self->_server_pid_file) {
-                _sleep(0.1);
-            }
-        }
-        delete $running_servers{$self->{server}};
-    }
-    $self->root_path->rmtree if !$self->keep_files && ($self->{pid} == $$);
+    $self->_cleanup_resources();
 }
 
 #------------------------------------------------------------------------------
@@ -158,7 +146,9 @@ sub _spawn_server {
         my $port = _choose_random_port($base_port, $port_range);
 
         if ($self->_try_spawn_server($port)) {
-            $running_servers{$self->{server}} = $self->{server};
+            push(@instances, $self);
+            weaken($instances[-1]);
+
             $self->{server_port} = $port;
             $self->{server_pid} = $self->_get_server_pid;
             _diag('Server pid ', $self->server_pid,
@@ -216,11 +206,24 @@ sub _get_server_pid {
     }
 }
 
-sub _kill_server {
-    my ($server) = @_;
-    # kill_kill takes forever on Win32
-    $server->signal('KILL') if $^O eq 'MSWin32';
-    $server->kill_kill, grace => 5;
+sub _cleanup_resources {
+    my ($self) = @_;
+
+    # Only cleanup if we are the creating process
+    return unless $self->{pid} == $$;
+
+    if (my $server = delete $self->{server}) {
+        # kill_kill takes forever on Win32
+        $server->signal('KILL') if $^O eq 'MSWin32';
+        $server->kill_kill(grace => 5);
+
+        # wait until we can manually unlink the pid file - on Win32 it can
+        # still be locked and the subsequent rmtree fails
+        while (not unlink $self->_server_pid_file) {
+            _sleep(0.1);
+        }
+    }
+    $self->root_path->rmtree if !$self->keep_files && $self->root_path;
 }
 
 sub _read_file {
