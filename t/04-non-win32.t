@@ -129,21 +129,19 @@ note 'Exit time file cleanup for server mode'; {
 
 note 'Exit time server cleanup for server mode'; {
     my $tempdir = File::Temp->newdir;
-    my $pid_file = 'server.pid';
-    in_child(sub {
-        our $repo =
-            Test::SVN::Repo->new( root_path  => $tempdir,
-                                  keep_files => 1,
-                                  users      => \%users );
-
-        # Write the server pid to a file in tempdir
-        $repo->root_path->file($pid_file)->spew($repo->server_pid);
-        return 0;
-    });
-
-    # And read the server pid back in again
-    my $server_pid = Path::Class::File->new($tempdir, $pid_file)->slurp;
+    my $server_pid = run_repo_in_child($tempdir);
     ok(! process_exists($server_pid), '... server got cleaned up');
+}
+
+note 'Exit time foreign process non-cleanup'; {
+    my $tempdir = File::Temp->newdir;
+    my $repo = Test::SVN::Repo->new( users => \%users );
+
+    my $server_pid = run_repo_in_child($tempdir);
+    ok(! process_exists($server_pid), '... child server got cleaned up');
+
+    ok(process_exists($repo->server_pid), '... parent server still running');
+    ok(-d $repo->root_path, '... parent root path still there');
 }
 
 Test::NoWarnings::had_no_warnings() if $ENV{RELEASE_TESTING};
@@ -202,3 +200,22 @@ sub in_child {
     return ($? >> 8);
 }
 
+sub run_repo_in_child {
+    my ($root_path) = @_;
+
+    my $pid_file = 'server.pid';
+    in_child(sub {
+        our $repo =
+            Test::SVN::Repo->new( root_path  => $root_path,
+                                  keep_files => 1,
+                                  users      => \%users );
+
+        # Write the server pid to a file in tempdir
+        $repo->root_path->file($pid_file)->spew($repo->server_pid);
+        return 0;
+    });
+
+    # And read the server pid back in again
+    my $server_pid = Path::Class::File->new($root_path, $pid_file)->slurp;
+    return $server_pid;
+}
