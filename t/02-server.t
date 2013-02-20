@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 30 + ($ENV{RELEASE_TESTING} ? 1 : 0);
+use Test::More tests => 31 + ($ENV{RELEASE_TESTING} ? 1 : 0);
 use Test::Exception;
 require Test::NoWarnings if $ENV{RELEASE_TESTING};
 
@@ -16,7 +16,7 @@ BEGIN { use_ok( 'Test::SVN::Repo' ) }
 my $svn;
 
 SKIP: {
-    skip 'Subversion not installed', 29
+    skip 'Subversion not installed', 30
         unless ($svn = can_run('svn'));
 
     my %users = ( userA => 'passA', userB => 'passB' );
@@ -63,7 +63,7 @@ SKIP: {
     }
 
 SKIP: {
-    skip 'Not valid for Win32', 18
+    skip 'Not valid for Win32', 19
        if $^O eq 'MSWin32';
 
     note 'Port range tests'; {
@@ -111,25 +111,34 @@ SKIP: {
 
     note 'Forking'; {
 
-        my $repo = Test::SVN::Repo->new( users => \%users );
-        ok(run_ok($svn, 'info', $repo->url), '... server is alive');
+        # Two repos, one local, one global
+        our $global_repo = Test::SVN::Repo->new( users => \%users );
+        my  $local_repo  = Test::SVN::Repo->new( users => \%users );
 
-        lives_ok {
+        ok(run_ok($svn, 'info', $global_repo->url), '... global server is up');
+        ok(run_ok($svn, 'info', $local_repo->url),  '... local server is up');
+
+        my $child_count = 0;
+        for (1 .. 8) {
             my $pid = fork;
-            die unless defined $pid;
+            next unless defined $pid;
             if ($pid) {
-                waitpid($pid, 0);
+                $child_count++;
             }
             else {
+                # Just exit in the child
                 exit 0;
             }
-        } '... created child process';
+        }
+        for (1 .. $child_count) {
+            waitpid(-1, 0);
+        }
 
-        my $ok;
-        ok($ok = run_ok($svn, 'info', $repo->url), '... server is still alive');
+        ok(run_ok($svn, 'info', $global_repo->url),
+            '... global server is still up');
 
-        # This is a hack so that we don't hang if the test fails
-        delete $repo->{server} unless $ok;
+        ok(run_ok($svn, 'info', $local_repo->url),
+            '... local server is still up');
     }
 
 }; # end SKIP Win32
