@@ -111,6 +111,37 @@ note 'Exit time cleanup for non-server mode'; {
     ok(! -d $tempdir, '... root path got cleaned up');
 }
 
+note 'Exit time file cleanup for server mode'; {
+    my $tempdir = File::Temp->newdir;
+    in_child(sub {
+        our $repo =
+            Test::SVN::Repo->new( root_path  => $tempdir,
+                                  keep_files => 0,
+                                  users      => \%users );
+    });
+
+    ok(! -d $tempdir, '... root path got cleaned up');
+}
+
+note 'Exit time server cleanup for server mode'; {
+    my $tempdir = File::Temp->newdir;
+    my $pid_file = 'server.pid';
+    in_child(sub {
+        our $repo =
+            Test::SVN::Repo->new( root_path  => $tempdir,
+                                  keep_files => 1,
+                                  users      => \%users );
+
+        # Write the server pid to a file in tempdir
+        $repo->root_path->file($pid_file)->spew($repo->server_pid);
+        return 0;
+    });
+
+    # And read the server pid back in again
+    my $server_pid = Path::Class::File->new($tempdir, $pid_file)->slurp;
+    ok(! process_exists($server_pid), '... server got cleaned up');
+}
+
 Test::NoWarnings::had_no_warnings() if $ENV{RELEASE_TESTING};
 done_testing();
 
