@@ -82,6 +82,25 @@ note 'Manual temporary directory handling without cleanup'; {
     $path->rmtree;
 }
 
+sub in_child {
+    my $coderef = shift;
+    my $pid = fork;
+    return unless defined $pid;
+    exit($coderef->()) unless $pid;
+    waitpid($pid, 0);
+    return $?;
+}
+
+note 'Global directory cleanup at exit time'; {
+    my $tempdir = File::Temp->newdir;
+    in_child(sub {
+        our $repo =
+            Test::SVN::Repo->new( root_path => $tempdir, keep_files => 0 );
+    });
+
+    ok(! -d $tempdir, '... root path got cleaned up');
+}
+
 note 'Verbose mode'; {
     lives_ok { Test::SVN::Repo->new( verbose => 1 ) }
         '... ctor lives';
