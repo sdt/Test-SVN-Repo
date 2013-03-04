@@ -257,7 +257,8 @@ __END__
 
     my $repo_url = $repo->url;
 
-    system("svn co $repo");     # do stuff with your new repo
+    # do stuff with your new repo
+    system("svn co --username joe --password secret $repo_url");
 
 =head1 DESCRIPTION
 
