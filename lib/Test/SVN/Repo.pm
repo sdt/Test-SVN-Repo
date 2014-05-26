@@ -248,7 +248,7 @@ __END__
 =head1 SYNOPSIS
 
     # Create a plain on-disk repo
-    $repo = Test::SVN::Repo->new;
+    my $repo = Test::SVN::Repo->new;
 
     # Create a repo with password authenticated server
     $repo = Test::SVN::Repo->new(
