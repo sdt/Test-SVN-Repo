@@ -4,12 +4,12 @@ Test::SVN::Repo - Subversion repository fixtures for testing
 
 # VERSION
 
-version 0.011
+version 0.012
 
 # SYNOPSIS
 
     # Create a plain on-disk repo
-    $repo = Test::SVN::Repo->new;
+    my $repo = Test::SVN::Repo->new;
 
     # Create a repo with password authenticated server
     $repo = Test::SVN::Repo->new(
@@ -18,7 +18,8 @@ version 0.011
 
     my $repo_url = $repo->url;
 
-    system("svn co $repo");     # do stuff with your new repo
+    # do stuff with your new repo
+    system("svn co --username joe --password secret $repo_url");
 
 # DESCRIPTION
 

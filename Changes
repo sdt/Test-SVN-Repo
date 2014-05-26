@@ -2,6 +2,10 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.012-TRIAL 2014-05-26
+
+    - Use locale-indendent method of checking for port-already-in-use failures
+
 0.011 2013-02-20
 
     - Fix regression from 0.010 - child process exit would kill global servers
