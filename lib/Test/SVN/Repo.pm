@@ -166,6 +166,8 @@ sub _choose_random_port {
 
 sub _try_spawn_server {
     my ($self, $port) = @_;
+    # We're checking message text - need to ensure matching locale
+    local $ENV{LC_MESSAGES} = 'en_US';
     my @cmd = ( 'svnserve',
                 '-d',           # daemon mode
                 '--foreground', # don't actually daemonize
@@ -185,7 +187,8 @@ sub _try_spawn_server {
         $h->pump_nb;
     }
     $h->finish;
-    return 0 if ($err =~ /E000048/); # retry
+    return 0 if ($err =~ /Address already in use/i); # retry
+    return 0 if ($err =~ /E000048/i);                # retry
     die $err;
 }
 
