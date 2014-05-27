@@ -2,6 +2,10 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.013-TRIAL 2014-05-27
+
+    - Use both methods of checking for port-already-in-use failures
+
 0.012-TRIAL 2014-05-26
 
     - Use locale-indendent method of checking for port-already-in-use failures
