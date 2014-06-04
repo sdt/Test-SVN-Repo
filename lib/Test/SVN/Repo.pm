@@ -8,6 +8,7 @@ use Carp            qw( croak );
 use IPC::Run        qw( run start );
 use File::Temp      qw( tempdir );
 use Path::Class     ();
+use POSIX           qw( :errno_h );
 use Scalar::Util    qw( weaken );
 use Try::Tiny       qw( catch try );
 use URI::file       ();
@@ -187,8 +188,9 @@ sub _try_spawn_server {
         $h->pump_nb;
     }
     $h->finish;
-    return 0 if ($err =~ /Address already in use/i); # retry
-    return 0 if ($err =~ /E000048/i);                # retry
+    my $eaddrinuse = EADDRINUSE();
+    return 0 if ($err =~ /E0+$eaddrinuse\D/i);       # newer svn uses code
+    return 0 if ($err =~ /Address already in use/i); # older svn uses msg only
     die $err;
 }
 
