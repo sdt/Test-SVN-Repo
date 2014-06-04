@@ -2,6 +2,11 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.015-TRIAL 2014-06-04
+
+    - Use LC_MESSAGES=C to fix locale language
+    - Use EADDRINUSE rather than hardcoded errno value
+
 0.014     2014-06-02
 
     - Unchanged from 0.013-TRIAL
