@@ -60,7 +60,7 @@ note 'Check that svnserve gets cleaned up'; {
     # IPC::Run confirms this behaviour. Processes can only be KILLED
     # under win32.
 
-    for my $signame (qw( HUP INT QUIT TERM )) {
+    for my $signame ( qw( ABRT BUS EMT FPE HUP ILL INT PIPE QUIT SEGV SYS TERM TRAP ) ) {
         my $pid;
         lives_ok { $pid = spawn_and_signal($signame) }
             '... child process started okay';

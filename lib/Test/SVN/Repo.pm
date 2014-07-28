@@ -31,7 +31,8 @@ sub CLEANUP {
     }
     exit(0);
 }
-$SIG{$_} = \&CLEANUP for qw( HUP INT QUIT TERM );
+$SIG{$_} = \&CLEANUP
+    for qw( ABRT BUS EMT FPE HUP ILL INT PIPE QUIT SEGV SYS TERM TRAP );
 END { CLEANUP() }
 
 #------------------------------------------------------------------------------
