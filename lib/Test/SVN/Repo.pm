@@ -12,7 +12,7 @@ use POSIX           qw( :errno_h strerror );
 use Scalar::Util    qw( weaken );
 use URI::file       ();
 
-use base qw( Class::Accessor Test::Builder::Module );
+use base qw( Class::Accessor );
 
 __PACKAGE__->mk_ro_accessors(qw(
         root_path users keep_files verbose start_port end_port retry_count
