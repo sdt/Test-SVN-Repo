@@ -10,7 +10,6 @@ use File::Temp      qw( tempdir );
 use Path::Class     ();
 use POSIX           qw( :errno_h strerror );
 use Scalar::Util    qw( weaken );
-use Try::Tiny       qw( catch try );
 use URI::file       ();
 
 use base qw( Class::Accessor Test::Builder::Module );
