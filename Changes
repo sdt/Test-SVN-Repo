@@ -2,6 +2,12 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.018     2014-07-28
+
+    - Handle more signals (SEGV etc) in cleanup
+    - Remove unnecessary Try::Tiny dependency
+    - Remove unnecessary Test::Builder::Module base class
+
 0.017     2014-07-11
 
     - Unchanged from 0.016-TRIAL
