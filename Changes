@@ -2,6 +2,10 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.017     2014-07-11
+
+    - Unchanged from 0.016-TRIAL
+
 0.016-TRIAL 2014-06-11
 
     - Also use strerror(EADDRINUSE) to catch stubborn locales
