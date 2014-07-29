@@ -30,8 +30,11 @@ sub CLEANUP {
     }
     exit(0);
 }
-$SIG{$_} = \&CLEANUP
-    for qw( ABRT BUS EMT FPE HUP ILL INT PIPE QUIT SEGV SYS TERM TRAP );
+
+for my $sig (qw( ABRT BUS EMT FPE HUP ILL INT PIPE QUIT SEGV SYS TERM TRAP )) {
+    next unless exists $SIG{$sig};
+    $SIG{$sig} = \&CLEANUP
+}
 END { CLEANUP() }
 
 #------------------------------------------------------------------------------
