@@ -2,6 +2,10 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.020     2014-07-29
+
+    - Fix unknown signal in tests
+
 0.019     2014-07-29
 
     - Check signals exist before installing handlers for them
