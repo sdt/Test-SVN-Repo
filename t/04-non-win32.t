@@ -61,6 +61,8 @@ note 'Check that svnserve gets cleaned up'; {
     # under win32.
 
     for my $signame ( qw( ABRT BUS EMT FPE HUP ILL INT PIPE QUIT SEGV SYS TERM TRAP ) ) {
+        next unless exists $SIG{$signame};
+
         my $pid;
         lives_ok { $pid = spawn_and_signal($signame) }
             '... child process started okay';
