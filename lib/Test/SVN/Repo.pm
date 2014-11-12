@@ -198,7 +198,7 @@ sub _try_spawn_server {
     # Final fallback for stubborn locales
     my $eaddrinuse_msg = strerror($eaddrinuse);
     return 0 if ($err =~ /\Q$eaddrinuse_msg\E/i);
-    die $err;
+    die "$err (EADDRINUSE=\"$eaddrinuse_msg\")\n";
 }
 
 sub _get_server_pid {
