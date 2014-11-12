@@ -2,6 +2,12 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.021-TRIAL 2014-11-12
+
+    - Attempting to fix https://rt.cpan.org/Public/Bug/Display.html?id=100208
+    - use LC_ALL=C not LC_MESSAGES=C
+    - extra diagnostics for svnserve EADDRINUSE message strangeness
+
 0.020     2014-07-29
 
     - Fix unknown signal in tests
