@@ -2,6 +2,10 @@ Revision History for perl module Test::SVN::Repo
 
 {{$NEXT}}
 
+0.022     2014-11-17
+
+    - Unchanged from 0.021-TRIAL
+
 0.021-TRIAL 2014-11-12
 
     - Attempting to fix https://rt.cpan.org/Public/Bug/Display.html?id=100208
